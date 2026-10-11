@@ -121,6 +121,20 @@ O código tenta Telegram primeiro; se não estiver configurado, usa ntfy; se tam
 
 > Token de bot no repositório é vazamento na certa: `.env.local` está no `.gitignore` justamente por isso. Se algum dia colar o token em um chat, revogue com `/revoke` no `@BotFather` e atualize o arquivo.
 
+## Privacidade
+
+Nada pessoal seu vive no repositório:
+
+| Na sua máquina (fora do git) | No GitHub, como secret |
+|---|---|
+| `.env.local` — token do bot | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` |
+| `carteira.json` — seus números | `CARTEIRA_JSON` |
+| `relatorios/` — histórico do que chegou | — (o histórico de verdade é o próprio Telegram) |
+
+Quando mudar seus dados, atualize os dois lugares: o arquivo local e o secret. O que está no repositório é código, indicadores públicos e o `carteira.example.json` sem número nenhum.
+
+Se um dia colar um token em lugar público (chat, print, issue), revogue no `@BotFather` com `/revoke` e atualize o `.env.local` e o secret — o valor antigo deixa de valer na hora.
+
 ## Para aprender com ele
 
 1. Anote a meta Selic de hoje e o IPCA em 12 meses. Volte em um mês e explique o que mudou e por quê.
