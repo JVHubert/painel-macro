@@ -16,6 +16,7 @@ import {
   mudancas,
   paraNumero,
   paraSerie,
+  podeMostrarDetalhe,
   simulacao,
   urlSgs,
   valorAntes,
@@ -26,6 +27,12 @@ test('urlSgs monta o endereço do Banco Central', () => {
     urlSgs(432, '01/01/2026'),
     'https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados?formato=json&dataInicial=01%2F01%2F2026',
   );
+});
+
+test('podeMostrarDetalhe esconde o detalhe no GitHub Actions', () => {
+  assert.equal(podeMostrarDetalhe({}), true);
+  assert.equal(podeMostrarDetalhe({ GITHUB_ACTIONS: 'false' }), true);
+  assert.equal(podeMostrarDetalhe({ GITHUB_ACTIONS: 'true' }), false);
 });
 
 test('converte as respostas do Banco Central', () => {

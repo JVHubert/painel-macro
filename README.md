@@ -87,19 +87,19 @@ Sempre que mudar seus números, rode esse comando de novo (o arquivo local conti
 
 ```json
 {
-  "receitaMensal": 5000,
-  "custoMensal": 2350,
-  "aporteMensal": 2000,
+  "receitaMensal": 7000,
+  "custoMensal": 4000,
+  "aporteMensal": 1000,
   "reserva": {
     "alvoMeses": 6,
     "detalhe": [
-      { "nome": "Conta corrente", "saldo": 1960.70 },
-      { "nome": "Caixinha X", "saldo": 12346.42, "rendimento": 1740.14, "dataAporte": "2025-06-29" },
-      { "nome": "Cofrinho Y", "saldo": 7534.53, "taxaCDI": 1.20 }
+      { "nome": "Conta corrente", "saldo": 2500.00 },
+      { "nome": "Caixinha X", "saldo": 10000.00, "rendimento": 1200.00, "dataAporte": "2025-06-30" },
+      { "nome": "Cofrinho Y", "saldo": 4500.00, "taxaCDI": 1.20 }
     ]
   },
   "posicoes": [
-    { "ticker": "RENT3", "quantidade": 7, "precoMedio": 49.40, "dataCompra": "2025-10-01" }
+    { "ticker": "RENT3", "quantidade": 100, "precoMedio": 30.00, "dataCompra": "2025-10-01" }
   ]
 }
 ```
@@ -135,17 +135,17 @@ da decisão, a outra guarda a sua **resposta antes** da correção.
 ### Diário de decisões (`npm run diario`)
 
 ```powershell
-npm run diario -- novo "tirar a Caixinha Turbo para CDB ou Tesouro"
+npm run diario -- novo "tirar a Caixinha X para CDB ou Tesouro"
 npm run diario
 ```
 
 O comando cria um bloco em `diario/decisoes.md` (arquivo fora do git) e você preenche no editor:
 
 ```
-## 2026-10-11 · Tirar a Caixinha Turbo (86% do CDI) para CDB ou Tesouro
+## 2026-10-11 · Tirar a Caixinha X (80% do CDI) para CDB ou Tesouro
 - tipo: renda fixa
-- valor: 12346.42
-- tese: 86% do CDI num produto que prometia mais
+- valor: 10000.00
+- tese: 80% do CDI num produto que prometia mais
 - espero: achar taxa real acima de 6% ao ano
 - provacao: se o Tesouro IPCA+ estiver pagando menos que 5% real
 - revisarEm: 2027-01-09

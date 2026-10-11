@@ -1,6 +1,8 @@
 // Entrega o relatório no canal configurado: Telegram primeiro, ntfy depois, senão imprime na tela.
 // Telegram: defina TELEGRAM_TOKEN e TELEGRAM_CHAT_ID (ver README).
 // ntfy: defina NTFY_TOPIC (opcional: NTFY_SERVER, NTFY_TOKEN).
+import { podeMostrarDetalhe } from '../indicadores.js';
+
 const LIMITE_TELEGRAM = 4000;
 
 export async function enviar(texto, { titulo = 'Painel macro' } = {}) {
@@ -11,7 +13,8 @@ export async function enviar(texto, { titulo = 'Painel macro' } = {}) {
   const topico = process.env.NTFY_TOPIC;
   if (topico) return enviarNtfy(texto, { titulo, topico });
 
-  console.log(texto);
+  // Sem canal configurado, o texto iria para o log — no GitHub (log público) ele fica de fora.
+  if (podeMostrarDetalhe(process.env)) console.log(texto);
   return { canal: 'tela' };
 }
 
@@ -89,7 +92,7 @@ export async function enviarSemDerrubar(texto, opcoes = {}) {
     return resultado;
   } catch (erro) {
     console.log(`::warning::falha ao enviar (${erro.message}) — o texto ficou salvo em relatorios/`);
-    console.log(texto);
+    if (podeMostrarDetalhe(process.env)) console.log(texto);
     return { canal: 'erro', erro: erro.message };
   }
 }

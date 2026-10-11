@@ -6,13 +6,13 @@ Um bot do Telegram é um contato automático: **quem puxa conversa é sempre voc
 
 ## Parte 1 — O bot (você já tem)
 
-Você já criou o `@jv_rent3_bot`. Se precisar criar outro:
+Você já criou o seu bot. Se precisar criar outro:
 
 1. No Telegram, busque **@BotFather** (o oficial tem selo de verificado) e toque em **START**.
 2. Mande `/newbot`.
 3. Escolha o nome que aparece na conversa (ex.: `Painel macro`).
 4. Escolha o usuário: precisa ser único no mundo e terminar em `bot` (ex.: `jv_painel_macro_bot`).
-5. O BotFather responde com `Use this token to access the HTTP API:` e uma linha assim: `8853811757:AAF...`. **Esse é o token** — toque e segure para copiar.
+5. O BotFather responde com `Use this token to access the HTTP API:` e uma linha assim: `123456789:AAF...`. **Esse é o token** — toque e segure para copiar.
 
 Opcional, para ficar apresentável: `/setdescription`, `/setuserpic`, `/setcommands`.
 
@@ -20,7 +20,7 @@ Opcional, para ficar apresentável: `/setdescription`, `/setuserpic`, `/setcomma
 
 Este é o passo que quase todo mundo esquece.
 
-1. No Telegram, busque **@jv_rent3_bot**.
+1. No Telegram, busque o **nome do seu bot** (o que você escolheu na Parte 1).
 2. Toque em **START** (ou `/start`). Se não aparecer o botão, toque no nome do bot e depois em **Iniciar**.
 3. Mande qualquer mensagem: `oi`.
 
@@ -55,7 +55,7 @@ Se aparecer "Nenhuma mensagem encontrada": você ainda não mandou o `oi` (Parte
 Abra `C:\AI\painel-macro\.env.local` no VS Code. O token já está lá; falta o id:
 
 ```
-TELEGRAM_TOKEN=8853811757:AAF...
+TELEGRAM_TOKEN=123456789:AAF...
 TELEGRAM_CHAT_ID=123456789
 ```
 
@@ -147,7 +147,7 @@ O `carteira.example.json` no repositório é só o modelo, sem número nenhum.
 - O token é a senha do bot. Não cole em chat, print, issue ou código.
 - Se vazar: `/revoke` no @BotFather gera outro na hora — troque no `.env.local` e no secret do GitHub.
 - Quem tem o token pode mandar mensagem em nome do bot, mas **não** entra na sua conta do Telegram nem lê suas conversas.
-- O bot é seu, mas é público no sentido de que qualquer pessoa pode encontrar `@jv_rent3_bot` e mandar `/start`. Ele não responde nada e não envia nada para ninguém que você não tenha configurado como `chat_id`.
+- O bot é seu, mas é público no sentido de que qualquer pessoa pode encontrar o seu bot pelo nome e mandar `/start`. Ele não responde nada e não envia nada para ninguém que você não tenha configurado como `chat_id`.
 
 ## Resumo do que roda sozinho depois disso
 

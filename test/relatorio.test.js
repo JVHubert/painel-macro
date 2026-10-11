@@ -120,7 +120,7 @@ test('emoji no fim da linha não desalinha a esquerda', () => {
 test('encurtar corta nome comprido', () => {
   assert.equal(encurtar('Curto', 10), 'Curto');
   assert.equal(encurtar('Nome realmente comprido', 10), 'Nome real…');
-  assert.equal(encurtar('Caixinha Turbo', 20), 'Caixinha Turbo');
+  assert.equal(encurtar('Caixinha X', 20), 'Caixinha X');
 });
 
 test('macro sai em tabela alinhada', () => {
@@ -146,13 +146,13 @@ test('macro sem dado não quebra', () => {
 
 test('posição calcula resultado e comparação com o CDI', () => {
   const posicao = resumoPosicao(
-    { ticker: 'RENT3', quantidade: 7, precoMedio: 40 },
+    { ticker: 'RENT3', quantidade: 10, precoMedio: 40 },
     { preco: 54.51, variacaoDia: 0.0113, variacaoSemana: 0.0761 },
     { cdiNoPeriodo: 0.1 },
   );
-  assert.equal(posicao.investido, 280);
-  assert.ok(Math.abs(posicao.mercado - 381.57) < 1e-9);
-  assert.ok(Math.abs(posicao.resultado - 101.57) < 1e-9);
+  assert.equal(posicao.investido, 400);
+  assert.ok(Math.abs(posicao.mercado - 545.1) < 1e-9);
+  assert.ok(Math.abs(posicao.resultado - 145.1) < 1e-9);
   assert.ok(Math.abs(posicao.rentabilidade - 0.3627) < 0.001);
   assert.equal(posicao.nivel.nome, 'muito bom');
   assert.ok(Math.abs(posicao.vsCdi - 0.2627) < 0.001);
@@ -164,14 +164,14 @@ test('posição sem preço médio vira pendência, não número inventado', () =
     macro: resumoMacro(PAINEL),
     posicoes: [
       resumoPosicao(
-        { ticker: 'RENT3', quantidade: 7, precoMedio: null, dataCompra: null },
+        { ticker: 'RENT3', quantidade: 10, precoMedio: null, dataCompra: null },
         { preco: 54.51, variacaoDia: 0.0113, variacaoSemana: 0.0761 },
       ),
     ],
     reserva: { atual: 0 },
   });
-  assert.match(texto, /RENT3 \(7 cotas\)/);
-  assert.match(texto, /R\$ 381,57/);
+  assert.match(texto, /RENT3 \(10 cotas\)/);
+  assert.match(texto, /R\$ 545,10/);
   assert.match(texto, /PENDÊNCIAS[\s\S]*preencha o precoMedio de RENT3/);
   assert.ok(!texto.includes('NaN'));
 });
@@ -182,24 +182,24 @@ test('dois lotes do mesmo papel ganham soma e o CDI de cada data', () => {
     macro: resumoMacro(PAINEL),
     posicoes: [
       resumoPosicao(
-        { ticker: 'RENT3', quantidade: 1, precoMedio: 51.19, dataCompra: '2021-12-02' },
-        { preco: 54.51, variacaoDia: 0.0419, variacaoSemana: 0.3141 },
-        { cdiNoPeriodo: 0.7982 },
+        { ticker: 'RENT3', quantidade: 10, precoMedio: 20, dataCompra: '2023-01-10' },
+        { preco: 21, variacaoDia: 0.012, variacaoSemana: 0.05 },
+        { cdiNoPeriodo: 0.5 },
       ),
       resumoPosicao(
-        { ticker: 'RENT3', quantidade: 6, precoMedio: 49.1, dataCompra: '2022-01-11' },
-        { preco: 54.51, variacaoDia: 0.0419, variacaoSemana: 0.3141 },
-        { cdiNoPeriodo: 0.7813 },
+        { ticker: 'RENT3', quantidade: 20, precoMedio: 25, dataCompra: '2024-01-10' },
+        { preco: 21, variacaoDia: 0.012, variacaoSemana: 0.05 },
+        { cdiNoPeriodo: 0.1 },
       ),
     ],
     reserva: { atual: 0 },
   });
-  assert.match(texto, /soma\s+R\$ 345,79\s+R\$ 381,57\s+10,35% 🟢/);
-  assert.match(texto, /1 cota\s+79,82%\s+-73,3 p\.p\. 🔴/);
-  assert.match(texto, /6 cotas\s+78,13%\s+-67,1 p\.p\. 🔴/);
-  // 51,19×1,7982 + 294,60×1,7813 = 616,82 → 381,57/616,82 - 1
-  assert.match(texto, /soma\s+R\$ 616,82\s+-38,14% 🔴/);
-  assert.match(texto, /na semana 31,41% 🔵/);
+  assert.match(texto, /soma\s+R\$ 700,00\s+R\$ 630,00\s+-10,00% 🟡/);
+  assert.match(texto, /10 cotas\s+50,00%\s+-45,0 p\.p\. 🔴/);
+  assert.match(texto, /20 cotas\s+10,00%\s+-26,0 p\.p\. 🔴/);
+  // 200×1,50 + 500×1,10 = 850 → 630/850 - 1
+  assert.match(texto, /soma\s+R\$ 850,00\s+-25,88% 🔴/);
+  assert.match(texto, /na semana 5,00% 🟢/);
 });
 
 test('reserva calcula cobertura e usa a cor do progresso', () => {
@@ -207,8 +207,8 @@ test('reserva calcula cobertura e usa a cor do progresso', () => {
   assert.match(vazia, /Saldo\s+R\$ 2\.500,00/);
   assert.match(vazia, /Cobertura\s+1,0 meses de custo \(meta 6\) 🟡/);
 
-  const cheia = resumoReserva({ atual: 36000 }, { custoMensal: 2350 }).texto;
-  assert.match(cheia, /15,3 meses de custo \(meta 6\) 🔵/);
+  const cheia = resumoReserva({ atual: 36000 }, { custoMensal: 4000 }).texto;
+  assert.match(cheia, /9,0 meses de custo \(meta 6\) 🔵/);
 
   const semDado = resumoReserva({}, {});
   assert.match(semDado.texto, /sem dado para calcular/);
@@ -243,7 +243,7 @@ test('reserva detalhada separa medido de prometido', () => {
         { nome: 'Cofrinho Z', saldo: 300, taxaCDI: 1.2 },
       ],
     },
-    { custoMensal: 2350 },
+    { custoMensal: 4000 },
   );
 
   assert.match(texto, /Saldo\s+R\$ 3\.100,00/);
@@ -326,14 +326,14 @@ test('relatório completo monta todos os blocos', () => {
     macro: resumoMacro(PAINEL),
     posicoes: [
       resumoPosicao(
-        { ticker: 'RENT3', quantidade: 7, precoMedio: 40, dataCompra: '2026-01-01' },
+        { ticker: 'RENT3', quantidade: 10, precoMedio: 40, dataCompra: '2026-01-01' },
         { preco: 54.51, variacaoDia: 0.0113, variacaoSemana: 0.0761 },
         { cdiNoPeriodo: 0.1 },
       ),
     ],
     reserva: { atual: 3000 },
-    receitaMensal: 5000,
-    custoMensal: 2350,
+    receitaMensal: 7000,
+    custoMensal: 4000,
     aporteMensal: 500,
     avisos: ['teste de aviso'],
   });
@@ -352,9 +352,9 @@ test('relatório completo monta todos os blocos', () => {
   for (const bloco of blocos) {
     assert.ok(texto.includes(bloco), `faltou o bloco ${bloco}`);
   }
-  assert.match(texto, /Receita\s+R\$ 5\.000,00/);
-  assert.match(texto, /Custo\s+-R\$ 2\.350,00/);
-  assert.match(texto, /Livre\s+R\$ 2\.650,00/);
+  assert.match(texto, /Receita\s+R\$ 7\.000,00/);
+  assert.match(texto, /Custo\s+-R\$ 4\.000,00/);
+  assert.match(texto, /Livre\s+R\$ 3\.000,00/);
   assert.match(texto, /programado\s+R\$ 500,00 por mês/);
   assert.match(texto, /\+26,3 p\.p\. 🔵/);
   assert.match(texto, /- teste de aviso/);

@@ -80,6 +80,11 @@ export function juroReal(nominal, inflacao) {
   return (1 + nominal) / (1 + inflacao) - 1;
 }
 
+// O log do GitHub Actions de repositório público é público: lá não entra nome nem valor do JV.
+export function podeMostrarDetalhe(env = {}) {
+  return env.GITHUB_ACTIONS !== 'true';
+}
+
 // Tabela regressiva do imposto de renda de renda fixa.
 export const FAIXAS_IR = [
   { ateDias: 180, aliquota: 0.225, rotulo: 'até 180 dias' },

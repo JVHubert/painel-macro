@@ -36,29 +36,29 @@ const PAINEL = {
 
 const POSICOES = [
   resumoPosicao(
-    { ticker: 'RENT3', quantidade: 1, precoMedio: 51.19, dataCompra: '2021-12-02' },
-    { preco: 54.51, variacaoDia: 0.0419, variacaoSemana: 0.3141 },
-    { cdiNoPeriodo: 0.7982 },
+    { ticker: 'RENT3', quantidade: 10, precoMedio: 20, dataCompra: '2023-01-10' },
+    { preco: 21, variacaoDia: 0.012, variacaoSemana: 0.05 },
+    { cdiNoPeriodo: 0.5 },
   ),
   resumoPosicao(
-    { ticker: 'RENT3', quantidade: 6, precoMedio: 49.1, dataCompra: '2022-01-11' },
-    { preco: 54.51, variacaoDia: 0.0419, variacaoSemana: 0.3141 },
-    { cdiNoPeriodo: 0.7813 },
+    { ticker: 'RENT3', quantidade: 20, precoMedio: 25, dataCompra: '2024-01-10' },
+    { preco: 21, variacaoDia: 0.012, variacaoSemana: 0.05 },
+    { cdiNoPeriodo: 0.1 },
   ),
 ];
 
 const RESERVA = {
   alvoMeses: 6,
   detalhe: [
-    { nome: 'Conta corrente', saldo: 1960.7 },
+    { nome: 'Conta corrente', saldo: 2500 },
     {
-      nome: 'Caixinha Turbo',
-      saldo: 12346.42,
-      rendimento: 1740.14,
-      dataAporte: '2025-06-29',
-      medido: { dias: 469, total: 0.1641, taxaAnual: 0.1255, percentualDoCdi: 0.86 },
+      nome: 'Caixinha X',
+      saldo: 10000,
+      rendimento: 1000,
+      dataAporte: '2025-06-30',
+      medido: { dias: 469, total: 0.1111, taxaAnual: 0.0888, percentualDoCdi: 0.8 },
     },
-    { nome: 'Cofrinho MP', saldo: 7534.53, taxaCDI: 1.2 },
+    { nome: 'Cofrinho Y', saldo: 4500, taxaCDI: 1.2 },
   ],
 };
 
@@ -68,9 +68,9 @@ const montar = (extra = {}) =>
     painel: PAINEL,
     posicoes: POSICOES,
     reserva: RESERVA,
-    receitaMensal: 5000,
-    custoMensal: 2350,
-    aporteMensal: 2000,
+    receitaMensal: 7000,
+    custoMensal: 4000,
+    aporteMensal: 1000,
     ...extra,
   });
 
@@ -85,11 +85,11 @@ test('html monta a página inteira com a paleta', () => {
 
 test('cores viram classe em vez de emoji', () => {
   const html = montar();
-  assert.match(html, /class="dir bom">6,49%/);
-  assert.match(html, /class="dir bom">10,35%/);
-  assert.match(html, /class="dir muito-ruim">−73,3 p\.p\./);
-  assert.match(html, /class="dir ruim">86%/); // abaixo do CDI: mostarda, não vermelho
-  assert.match(html, /class="dir muito-bom">9,3 meses/);
+  assert.match(html, /class="dir bom">5,00%/);
+  assert.match(html, /class="dir ruim">-10,00%/);
+  assert.match(html, /class="dir muito-ruim">−45,0 p\.p\./);
+  assert.match(html, /class="dir ruim">80%/); // abaixo do CDI: mostarda, não vermelho
+  assert.match(html, /class="dir ruim">4,3 meses/);
   assert.ok(!html.includes('🟢') && !html.includes('🔴'));
   assert.match(html, /■ \+20% ou mais/);
   // Nunca dois atributos class no mesmo elemento.
@@ -98,19 +98,19 @@ test('cores viram classe em vez de emoji', () => {
 
 test('números do relatório aparecem formatados', () => {
   const html = montar();
-  assert.match(html, /R\$ 345,79/);
-  assert.match(html, /R\$ 381,57/);
-  assert.match(html, /R\$ 616,82/);
-  assert.match(html, /−73,3 p\.p\./);
-  assert.match(html, /R\$ 21\.841,65/);
-  assert.match(html, /9,3 meses de custo \(meta 6\)/);
-  assert.match(html, /R\$ 2\.650,00/);
+  assert.match(html, /R\$ 700,00/);
+  assert.match(html, /R\$ 630,00/);
+  assert.match(html, /R\$ 850,00/);
+  assert.match(html, /−45,0 p\.p\./);
+  assert.match(html, /R\$ 17\.000,00/);
+  assert.match(html, /4,3 meses de custo \(meta 6\)/);
+  assert.match(html, /R\$ 3\.000,00/);
   assert.ok(!html.includes('NaN') && !html.includes('undefined'));
 });
 
 test('sem dado o html não quebra e vira pendência', () => {
   const html = montar({
-    posicoes: [resumoPosicao({ ticker: 'RENT3', quantidade: 7, precoMedio: null }, { preco: 54.51 })],
+    posicoes: [resumoPosicao({ ticker: 'RENT3', quantidade: 10, precoMedio: null }, { preco: 54.51 })],
     reserva: {},
   });
   assert.match(html, /sem dado para calcular/);

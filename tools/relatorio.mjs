@@ -1,7 +1,7 @@
 // Monta o relatório semanal: macro do painel + cotação das posições + reserva + pergunta da semana.
 // Uso: npm run relatorio   (envia pelo canal configurado e salva em relatorios/)
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { acumuladoDesde, compararComCdi, formatarData, taxaEquivalente } from '../indicadores.js';
+import { acumuladoDesde, compararComCdi, formatarData, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
 import { deslocarDias, montarRelatorio, resumoMacro, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { renderizar } from './imagem.mjs';
@@ -12,6 +12,8 @@ const DADOS = new URL('../dados/indicadores.json', import.meta.url);
 const CARTEIRA = new URL('../carteira.json', import.meta.url);
 const PASTA = new URL('../relatorios/', import.meta.url);
 const HOJE = new Date().toISOString().slice(0, 10);
+// Em log público (GitHub Actions) não aparece nome nem valor do JV; na máquina dele, aparece tudo.
+const MOSTRAR_DETALHE = podeMostrarDetalhe(process.env);
 
 // Segredos locais em .env.local (fora do git): o token do Telegram não entra no repositório.
 try {
@@ -52,7 +54,11 @@ let serieDoCdi = [];
 if (datasComCdi.length) {
   try {
     serieDoCdi = await serieCdi(datasComCdi[0]);
-    console.log(`CDI: ${serieDoCdi.length} dias desde ${datasComCdi[0]}`);
+    console.log(
+      MOSTRAR_DETALHE
+        ? `CDI: ${serieDoCdi.length} dias desde ${datasComCdi[0]}`
+        : `CDI: ${serieDoCdi.length} dias`,
+    );
   } catch (erro) {
     avisos.push(`CDI não veio hoje (${erro.message}) — comparações com o CDI ficam de fora`);
   }
@@ -63,7 +69,7 @@ for (const posicao of carteira.posicoes ?? []) {
   try {
     const preco = await cotacao(posicao.ticker);
     posicoes.push(resumoPosicao(posicao, preco, { cdiNoPeriodo: cdiDesdeData(posicao.dataCompra) }));
-    console.log(`${posicao.ticker}: R$ ${preco.preco}`);
+    if (MOSTRAR_DETALHE) console.log(`${posicao.ticker}: R$ ${preco.preco}`);
   } catch (erro) {
     avisos.push(`${posicao.ticker}: ${erro.message}`);
     posicoes.push(resumoPosicao(posicao, null));
@@ -76,7 +82,7 @@ function medirReserva(reserva) {
   for (const item of reserva?.detalhe ?? []) {
     const medido = item.dataAporte ? taxaEquivalente(item, HOJE) : null;
     const percentualDoCdi = medido ? compararComCdi(medido.total, cdiDesdeData(item.dataAporte)) : null;
-    if (medido) {
+    if (medido && MOSTRAR_DETALHE) {
       console.log(
         `${item.nome}: ${(medido.taxaAnual * 100).toFixed(2)}% a.a.${
           percentualDoCdi ? ` (${(percentualDoCdi * 100).toFixed(0)}% do CDI)` : ''
@@ -85,6 +91,7 @@ function medirReserva(reserva) {
     }
     detalhe.push({ ...item, medido: medido ? { ...medido, percentualDoCdi } : null });
   }
+  console.log(`reserva medida: ${detalhe.length} itens`);
   return detalhe.length ? { ...reserva, detalhe } : reserva;
 }
 
