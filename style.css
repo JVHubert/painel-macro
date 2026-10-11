@@ -1,0 +1,107 @@
+:root {
+  --fundo: #0f1115;
+  --texto: #f2f2f2;
+  --apagado: #8b93a1;
+  --linha: #2a2f3a;
+  --ok: #2ecc71;
+  --destaque: #6aa9ff;
+  /* Faixas da formatação condicional */
+  --muito-bom: #6aa9ff;
+  --bom: #2ecc71;
+  --neutro: #8b93a1;
+  --ruim: #d4a017;
+  --muito-ruim: #ff6b6b;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+  line-height: 1.45;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+  -webkit-tap-highlight-color: transparent;
+}
+
+.topo .linha { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+h1 { font-size: 26px; }
+
+button {
+  font: inherit;
+  font-size: 15px;
+  padding: 8px 14px;
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--texto);
+  cursor: pointer;
+}
+button:active { background: var(--linha); }
+
+.situacao, .ajuda, .referencia, .fonte, .variacao { font-size: 13px; color: var(--apagado); }
+.situacao { margin-top: 6px; min-height: 1.2em; }
+
+.cartoes { display: grid; gap: 12px; margin-top: 18px; }
+
+.cartao {
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+  padding: 14px;
+  background: #141821;
+}
+
+.cabecalho { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cabecalho h2 { font-size: 17px; }
+.fonte { text-align: right; flex: 0 1 auto; min-width: 0; }
+
+.valor { font-size: 34px; font-weight: 700; line-height: 1.1; margin-top: 6px; }
+.valor small { font-size: 14px; font-weight: 400; color: var(--apagado); margin-left: 6px; }
+
+.variacao { min-height: 1.2em; }
+
+/* Formatação condicional: a cor diz a faixa do número, não juízo de valor. */
+.nivel-muito-bom { color: var(--muito-bom); }
+.nivel-bom { color: var(--bom); }
+.nivel-neutro { color: var(--neutro); }
+.nivel-ruim { color: var(--ruim); }
+.nivel-muito-ruim { color: var(--muito-ruim); }
+
+.legenda-cores { margin-top: 4px; }
+
+.grafico { display: block; width: 100%; height: 32px; margin-top: 10px; }
+.grafico path { fill: none; stroke: var(--destaque); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+
+.sobre { font-size: 14px; margin-top: 10px; }
+.referencia { margin-top: 6px; }
+
+.simulador { margin-top: 26px; border-top: 1px solid var(--linha); padding-top: 18px; }
+.simulador h2 { font-size: 20px; }
+.ajuda { margin-top: 4px; }
+
+.campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.campos label { font-size: 13px; color: var(--apagado); display: block; margin-bottom: 4px; }
+input, select {
+  font: inherit;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--linha);
+  border-radius: 10px;
+  background: #141821;
+  color: var(--texto);
+}
+
+.resultado { margin-top: 14px; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; }
+.resultado dt { font-size: 14px; color: var(--apagado); }
+.resultado dd { font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+
+footer { margin-top: 26px; border-top: 1px solid var(--linha); padding-top: 14px; display: grid; gap: 6px; }
+footer p { font-size: 12px; color: var(--apagado); }
+
+@media (min-width: 520px) {
+  .cartoes { grid-template-columns: 1fr 1fr; }
+  .cartao[data-id="juro-real"] { grid-column: span 2; }
+}

@@ -1,0 +1,64 @@
+# Relatório semanal: domingo à noite, com macro, carteira, reserva e a pergunta da semana.
+# Envia por Telegram (TELEGRAM_TOKEN + TELEGRAM_CHAT_ID) ou ntfy (NTFY_TOPIC) — ver README.
+name: Relatório semanal
+
+on:
+  schedule:
+    - cron: '0 21 * * 0' # domingo às 18h em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: semanal
+
+jobs:
+  relatorio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Atualizar os indicadores
+        run: node tools/coletar.mjs
+
+      - name: Conferir as contas
+        run: npm test
+
+      - name: Usar a carteira do secret, se existir
+        env:
+          CARTEIRA_JSON: ${{ secrets.CARTEIRA_JSON }}
+        run: |
+          if [ -n "$CARTEIRA_JSON" ]; then
+            printf '%s\n' "$CARTEIRA_JSON" > carteira.json
+            echo "carteira.json veio do secret (não vai para o commit)"
+          else
+            echo "usando o carteira.json do repositório"
+          fi
+
+      - name: Montar e enviar o relatório
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: node tools/relatorio.mjs
+
+      - name: Guardar o histórico no repositório
+        run: |
+          set -euo pipefail
+          # A carteira e os relatórios são pessoais: só os indicadores vão para o git.
+          git add dados/indicadores.json
+          if git diff --cached --quiet; then
+            echo "nada mudou nesta semana"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "dados: indicadores de $(date -u +%d/%m/%Y)"
+          # A main pode ter andado enquanto o relatório era montado.
+          git pull --rebase --autostash origin main
+          git push

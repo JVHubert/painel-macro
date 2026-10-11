@@ -1,0 +1,17 @@
+{
+  "name": "painel-macro",
+  "version": "1.0.0",
+  "description": "Painel de indicadores econômicos (Selic, CDI, IPCA, dólar) que abre no celular, funciona offline e se atualiza sozinho.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "coletar": "node tools/coletar.mjs",
+    "relatorio": "node tools/relatorio.mjs",
+    "chat-id": "node tools/chat-id.mjs",
+    "serve": "node tools/servidor.mjs",
+    "publicar": "node tools/publicar.mjs",
+    "icones": "node tools/gerar-icones.mjs"
+  }
+}

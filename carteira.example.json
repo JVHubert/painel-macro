@@ -1,0 +1,16 @@
+{
+  "receitaMensal": 0,
+  "custoMensal": 0,
+  "aporteMensal": 0,
+  "reserva": {
+    "alvoMeses": 6,
+    "detalhe": [
+      { "nome": "Conta corrente", "saldo": 0 },
+      { "nome": "Caixinha X", "saldo": 0, "rendimento": 0, "dataAporte": "2025-01-01" },
+      { "nome": "Cofrinho Y", "saldo": 0, "taxaCDI": 1.2 }
+    ]
+  },
+  "posicoes": [
+    { "ticker": "RENT3", "quantidade": 0, "precoMedio": 0, "dataCompra": "2025-01-01" }
+  ]
+}

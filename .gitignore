@@ -1,0 +1,7 @@
+node_modules/
+dist/
+
+# Segredos e dados pessoais: ficam só na sua máquina (no GitHub vêm dos secrets).
+.env.local
+carteira.json
+relatorios/

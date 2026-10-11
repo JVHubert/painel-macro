@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Painel macro</title>
+  <meta name="description" content="Selic, CDI, IPCA e dólar num painel simples, com o que cada número significa.">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="linha">
+      <h1>Painel macro</h1>
+      <button id="atualizar" type="button">Atualizar</button>
+    </div>
+    <p id="situacao" class="situacao">Carregando…</p>
+  </header>
+
+  <main>
+    <section id="indicadores" class="cartoes" aria-live="polite"></section>
+
+    <section class="simulador">
+      <h2>Na prática</h2>
+      <p class="ajuda">Quanto um aporte renderia no CDI, já descontado o imposto de renda.</p>
+      <div class="campos">
+        <label for="valor">Valor (R$)</label>
+        <input id="valor" type="number" min="0" step="100" value="1000" inputmode="decimal">
+        <label for="meses">Prazo</label>
+        <select id="meses">
+          <option value="6">6 meses</option>
+          <option value="12" selected>1 ano</option>
+          <option value="24">2 anos</option>
+          <option value="60">5 anos</option>
+        </select>
+      </div>
+      <dl id="resultado" class="resultado"></dl>
+    </section>
+
+    <footer>
+      <p id="legenda" class="legenda-cores"></p>
+      <p>Selic, CDI e IPCA: Banco Central (SGS). Dólar: AwesomeAPI. Série atualizada por GitHub Actions.</p>
+      <p>Conteúdo educativo. Não é recomendação de investimento.</p>
+    </footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
