@@ -144,12 +144,13 @@ Se um dia colar um token em lugar público (chat, print, issue), revogue no `@Bo
 
 ## Desenvolvimento
 
-Requer Node.js 20+ (nenhuma dependência para instalar).
+Requer Node.js 22+ (o renderizador da imagem usa `puppeteer-core`, que pede Node 22.12 ou mais novo).
 
 ```sh
-npm test          # contas de juros, imposto, formatação, relatório e montagem dos cartões
+npm install       # só para o render da imagem (puppeteer-core usa o seu Chrome)
+npm test          # contas de juros, imposto, formatação, relatório e HTML
 npm run coletar   # busca as APIs e regrava dados/indicadores.json
-npm run relatorio # monta o relatório semanal (envia pelo canal configurado e salva em relatorios/)
+npm run relatorio # monta o relatório, salva em relatorios/ e envia (imagem, senão texto)
 npm run chat-id   # descobre o seu chat_id do Telegram (para o .env.local)
 npm run serve     # http://localhost:8080
 npm run publicar  # monta dist/site
