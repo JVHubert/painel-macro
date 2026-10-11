@@ -57,7 +57,7 @@ Tudo isso fica arquivado em `relatorios/AAAA-MM-DD.md` na sua máquina. **Nada d
 
 ### Cores (formatação condicional)
 
-Telegram não aceita cor em texto, então a cor vira emoji — a faixa é sobre o número, não juízo de valor:
+O relatório chega como **tabela monoespaçada** (o Telegram recebe dentro de `<pre>`, então as colunas ficam alinhadas). O Telegram **não aceita texto colorido** em mensagem — não existe essa opção — então a cor vira emoji. A faixa é sobre o número, não juízo de valor:
 
 | Emoji | Faixa | Exemplo |
 |---|---|---|

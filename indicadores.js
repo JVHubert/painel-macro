@@ -261,7 +261,12 @@ export function montarIndicadores(bruto = {}, { atualizadoEm = new Date().toISOS
   };
 }
 
-// Formatação condicional: as faixas de cor usadas no painel e no relatório.
+// Quanto o CDI rendeu de uma data até o fim da série (fração).
+export function acumuladoDesde(serie, dataIso) {
+  return acumular(filtrarDesde(serie, dataIso));
+}
+
+// Faixas de cor do painel e do relatório (formatação condicional).
 export const FAIXA_NEUTRA = 0.01;
 export const FAIXA_MUITO_BOM = 0.2;
 export const FAIXA_MUITO_RUIM = -0.2;

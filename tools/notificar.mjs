@@ -15,15 +15,26 @@ export async function enviar(texto, { titulo = 'Painel macro' } = {}) {
   return { canal: 'tela' };
 }
 
+// O relatório é uma tabela de texto: dentro de <pre> o Telegram usa fonte monoespaçada
+// e as colunas ficam alinhadas. (Telegram não aceita cor em texto — a cor é o emoji.)
+function escaparHtml(texto) {
+  return texto.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 async function enviarTelegram(texto, { token, chat }) {
-  const corpo =
+  const cortado =
     texto.length > LIMITE_TELEGRAM
-      ? `${texto.slice(0, LIMITE_TELEGRAM)}\n\n[…cortado, o relatório completo está no repositório]`
+      ? `${texto.slice(0, LIMITE_TELEGRAM)}\n\n[relatório cortado, o completo está em relatorios/]`
       : texto;
   const resposta = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ chat_id: chat, text: corpo, disable_web_page_preview: true }),
+    body: JSON.stringify({
+      chat_id: chat,
+      text: `<pre>${escaparHtml(cortado)}</pre>`,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    }),
   });
   const devolvido = await resposta.json().catch(() => ({}));
   if (!resposta.ok || devolvido.ok === false) {

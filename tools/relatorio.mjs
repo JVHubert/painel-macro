@@ -1,7 +1,7 @@
 // Monta o relatório semanal: macro do painel + cotação das posições + reserva + pergunta da semana.
 // Uso: npm run relatorio   (envia pelo canal configurado e salva em relatorios/)
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { acumular, compararComCdi, filtrarDesde, paraSerie, taxaEquivalente, urlSgs, SERIES } from '../indicadores.js';
+import { acumuladoDesde, compararComCdi, filtrarDesde, paraSerie, taxaEquivalente, urlSgs, SERIES } from '../indicadores.js';
 import { deslocarDias, montarRelatorio, resumoMacro, resumoPosicao } from '../relatorio.js';
 import { enviarSemDerrubar } from './notificar.mjs';
 
@@ -24,6 +24,22 @@ async function lerJson(url, dica) {
   } catch (erro) {
     throw new Error(`${url.pathname} indisponível (${erro.message}). ${dica}`);
   }
+}
+
+// Busca JSON com uma segunda chance: o Banco Central responde 200 com XML quando
+// limita a rajada de consultas, e isso não é um erro de verdade — é espera.
+async function buscarJson(url, { tentativas = 3, espera = 5000 } = {}) {
+  for (let tentativa = 1; tentativa <= tentativas; tentativa += 1) {
+    const resposta = await fetch(url, { headers: { accept: 'application/json' } });
+    if (resposta.status === 404) return [];
+    const tipo = resposta.headers.get('content-type') ?? '';
+    if (resposta.ok && tipo.includes('json')) return resposta.json();
+    if (tentativa < tentativas) {
+      console.log(`BCB não devolveu JSON (tentativa ${tentativa}), esperando ${espera / 1000}s…`);
+      await new Promise((seguir) => setTimeout(seguir, espera));
+    }
+  }
+  throw new Error(`resposta inesperada de ${url}`);
 }
 
 // Cotação da B3 pelo endpoint público do Yahoo — sem token, mas sem garantia de futuro.
@@ -54,15 +70,11 @@ export async function cotacao(ticker, { dias = 7 } = {}) {
   };
 }
 
-// Quanto o CDI rendeu entre a data da compra e hoje.
-export async function cdiDesde(dataCompra) {
-  const inicio = dataCompra.split('-').reverse().join('/');
-  const resposta = await fetch(urlSgs(SERIES.cdiDiaria, inicio), {
-    headers: { accept: 'application/json' },
-  });
-  if (!resposta.ok) throw new Error(`${resposta.status} ao buscar o CDI`);
-  const serie = filtrarDesde(paraSerie(await resposta.json()), dataCompra);
-  return serie.length ? acumular(serie) : null;
+// Quanto o CDI rendeu entre a data da compra e hoje — a série é buscada uma vez só (ver abaixo).
+export async function serieCdi(dataInicial) {
+  const inicio = dataInicial.split('-').reverse().join('/');
+  const bruto = await buscarJson(urlSgs(SERIES.cdiDiaria, inicio));
+  return filtrarDesde(paraSerie(bruto), dataInicial);
 }
 
 const painel = await lerJson(DADOS, 'Rode `npm run coletar` primeiro.');
@@ -75,26 +87,51 @@ const macro = resumoMacro(painel);
 
 const posicoes = [];
 const avisos = [];
+
+// O BCB bloqueia rajada de consultas (responde 200 com XML em vez de JSON), então o CDI
+// é buscado uma única vez, desde a data mais antiga que interessa, e recortado na memória.
+const datasComCdi = [
+  ...(carteira.posicoes ?? []).map((posicao) => posicao.dataCompra),
+  ...(carteira.reserva?.detalhe ?? []).map((item) => item.dataAporte),
+]
+  .filter(Boolean)
+  .sort();
+
+let serieDoCdi = [];
+if (datasComCdi.length) {
+  try {
+    serieDoCdi = await serieCdi(datasComCdi[0]);
+    console.log(`CDI: ${serieDoCdi.length} dias desde ${datasComCdi[0]}`);
+  } catch (erro) {
+    avisos.push(`CDI não veio hoje (${erro.message}) — comparações com o CDI ficam de fora`);
+  }
+}
+const cdiDesdeData = (data) => (data && serieDoCdi.length ? acumuladoDesde(serieDoCdi, data) : null);
+
 for (const posicao of carteira.posicoes ?? []) {
   try {
     const preco = await cotacao(posicao.ticker);
-    const cdi = posicao.dataCompra ? await cdiDesde(posicao.dataCompra).catch(() => null) : null;
-    posicoes.push(resumoPosicao(posicao, preco, { cdiNoPeriodo: cdi }));
+    posicoes.push(resumoPosicao(posicao, preco, { cdiNoPeriodo: cdiDesdeData(posicao.dataCompra) }));
     console.log(`${posicao.ticker}: R$ ${preco.preco}`);
   } catch (erro) {
-    avisos.push(`⚠️ ${posicao.ticker}: ${erro.message}`);
+    avisos.push(`${posicao.ticker}: ${erro.message}`);
     posicoes.push(resumoPosicao(posicao, null));
   }
 }
 
 // Cada item da reserva ganha a taxa equivalente e a comparação com o CDI no período.
-async function medirReserva(reserva) {
+function medirReserva(reserva) {
   const detalhe = [];
   for (const item of reserva?.detalhe ?? []) {
     const medido = item.dataAporte ? taxaEquivalente(item, HOJE) : null;
-    const cdi = item.dataAporte ? await cdiDesde(item.dataAporte).catch(() => null) : null;
-    const percentualDoCdi = medido ? compararComCdi(medido.total, cdi) : null;
-    if (medido) console.log(`${item.nome}: ${(medido.taxaAnual * 100).toFixed(2)}% a.a.${percentualDoCdi ? ` (${(percentualDoCdi * 100).toFixed(0)}% do CDI)` : ''}`);
+    const percentualDoCdi = medido ? compararComCdi(medido.total, cdiDesdeData(item.dataAporte)) : null;
+    if (medido) {
+      console.log(
+        `${item.nome}: ${(medido.taxaAnual * 100).toFixed(2)}% a.a.${
+          percentualDoCdi ? ` (${(percentualDoCdi * 100).toFixed(0)}% do CDI)` : ''
+        }`,
+      );
+    }
     detalhe.push({ ...item, medido: medido ? { ...medido, percentualDoCdi } : null });
   }
   return detalhe.length ? { ...reserva, detalhe } : reserva;
@@ -104,7 +141,7 @@ const texto = montarRelatorio({
   data: HOJE,
   macro,
   posicoes,
-  reserva: await medirReserva(carteira.reserva),
+  reserva: medirReserva(carteira.reserva),
   receitaMensal: carteira.receitaMensal,
   custoMensal: carteira.custoMensal,
   aporteMensal: carteira.aporteMensal,

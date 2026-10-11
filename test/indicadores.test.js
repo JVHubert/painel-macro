@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  acumuladoDesde,
   acumular,
   anualizarDiaria,
   caminhoSparkline,
@@ -129,6 +130,17 @@ test('formatação em português', () => {
 test('filtrarDesde recorta a janela', () => {
   const serie = [{ data: '2025-01-01' }, { data: '2026-01-01' }];
   assert.deepEqual(filtrarDesde(serie, '2025-06-01'), [{ data: '2026-01-01' }]);
+});
+
+test('acumuladoDesde compõe a série a partir de uma data', () => {
+  const serie = [
+    { data: '2025-01-01', valor: 10 },
+    { data: '2026-01-01', valor: 10 },
+    { data: '2026-06-01', valor: 10 },
+  ];
+  assert.ok(Math.abs(acumuladoDesde(serie, '2025-01-01') - 0.331) < 1e-9);
+  assert.ok(Math.abs(acumuladoDesde(serie, '2026-01-01') - 0.21) < 1e-9);
+  assert.equal(acumuladoDesde(serie, '2027-01-01'), 0);
 });
 
 const BRUTO = {
