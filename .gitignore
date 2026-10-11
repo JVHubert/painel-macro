@@ -5,3 +5,5 @@ dist/
 .env.local
 carteira.json
 relatorios/
+diario/decisoes.md
+estudo/respostas.md

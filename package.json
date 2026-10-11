@@ -9,6 +9,8 @@
     "test": "node --test",
     "coletar": "node tools/coletar.mjs",
     "relatorio": "node tools/relatorio.mjs",
+    "diario": "node tools/diario.mjs",
+    "estudo": "node tools/estudo.mjs",
     "chat-id": "node tools/chat-id.mjs",
     "serve": "node tools/servidor.mjs",
     "publicar": "node tools/publicar.mjs",

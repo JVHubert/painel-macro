@@ -17,6 +17,12 @@ Primeira vez configurando o Telegram? Siga o [COMO-CONFIGURAR-O-BOT.md](COMO-CON
 | `carteira.example.json` | modelo dos seus dados (copie para `carteira.json`, que fica fora do git) |
 | `PROMPT.md` | instruções para o seu professor de IA (colar no Gemini/ChatGPT) |
 | `relatorios/` | histórico do que você recebeu, na sua máquina (fora do git) |
+| `caderno.js` | lê, escreve e formata o diário e a trilha de estudo |
+| `diario/decisoes.example.md` | modelo do diário (o seu fica fora do git) |
+| `estudo/respostas.example.md` | modelo da trilha de estudo |
+| `tools/diario.mjs` | cobra a tese antes de decidir e o resultado depois |
+| `tools/estudo.mjs` | pergunta da semana, respostas e aproveitamento |
+| `tools/mercado.mjs` | cotação da B3 e série do CDI (compartilhado) |
 | `tools/coletar.mjs` | busca as APIs e grava `dados/indicadores.json` |
 | `tools/relatorio.mjs` | monta e envia o relatório de domingo |
 | `tools/notificar.mjs` | entrega no Telegram, senão no ntfy, senão na tela |
@@ -121,6 +127,59 @@ O código tenta Telegram primeiro; se não estiver configurado, usa ntfy; se tam
 
 > Token de bot no repositório é vazamento na certa: `.env.local` está no `.gitignore` justamente por isso. Se algum dia colar o token em um chat, revogue com `/revoke` no `@BotFather` e atualize o arquivo.
 
+## Diário de decisões e trilha de estudo
+
+São as duas ferramentas que fecham o ciclo de aprendizado: uma cobra a **tese antes**
+da decisão, a outra guarda a sua **resposta antes** da correção.
+
+### Diário de decisões (`npm run diario`)
+
+```powershell
+npm run diario -- novo "tirar a Caixinha Turbo para CDB ou Tesouro"
+npm run diario
+```
+
+O comando cria um bloco em `diario/decisoes.md` (arquivo fora do git) e você preenche no editor:
+
+```
+## 2026-10-11 · Tirar a Caixinha Turbo (86% do CDI) para CDB ou Tesouro
+- tipo: renda fixa
+- valor: 12346.42
+- tese: 86% do CDI num produto que prometia mais
+- espero: achar taxa real acima de 6% ao ano
+- provacao: se o Tesouro IPCA+ estiver pagando menos que 5% real
+- revisarEm: 2027-01-09
+- revisado:
+```
+
+- `valor` é quanto está em jogo (use `0` quando não for dinheiro).
+- `provacao` é o que provaria que você estava errado — é o campo que separa decisão de palpite.
+- Quando chega a data em `revisarEm`, o painel mostra a sua tese **ao lado do fato**: quanto o
+  ativo andou desde então (se o título citar um ticker) e quanto o CDI rendeu no mesmo período.
+- Aí você escreve em `revisado` o que aprendeu e a decisão sai da fila.
+
+### Trilha de estudo (`npm run estudo`)
+
+```powershell
+npm run estudo -- novo   # cria o bloco desta semana com a pergunta
+npm run estudo
+```
+
+A pergunta da semana é a mesma que chega no relatório de domingo. Responda **primeiro sem
+ajuda**, registre em `estudo/respostas.md` e só depois peça a correção com o `PROMPT.md`
+aberto. O painel mostra o aproveitamento das semanas.
+
+Ordem sugerida para os primeiros blocos (um por semana, no ritmo da pergunta que chega):
+
+1. juros compostos e a diferença entre taxa nominal e taxa real
+2. Selic, CDI e por que quase todo mundo recebe um pedaço do CDI
+3. IPCA e o que a inflação faz com quem guarda dinheiro parado
+4. renda fixa: liquidez, FGC e marcação a mercado
+5. imposto de renda regressivo: por que o tempo joga a seu favor
+6. reserva de emergência: quanto é o suficiente e o que sobra depois dela
+7. risco: volatilidade, concentração e o que uma queda de 30% significa na prática
+8. fundos, ETFs e FIIs: quando fazem sentido e quando só complicam
+
 ## Privacidade
 
 Nada pessoal seu vive no repositório:
@@ -130,6 +189,7 @@ Nada pessoal seu vive no repositório:
 | `.env.local` — token do bot | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` |
 | `carteira.json` — seus números | `CARTEIRA_JSON` |
 | `relatorios/` — histórico do que chegou | — (o histórico de verdade é o próprio Telegram) |
+| `diario/decisoes.md` e `estudo/respostas.md` — suas teses e respostas | — |
 
 Quando mudar seus dados, atualize os dois lugares: o arquivo local e o secret. O que está no repositório é código, indicadores públicos e o `carteira.example.json` sem número nenhum.
 
@@ -151,6 +211,8 @@ npm install       # só para o render da imagem (puppeteer-core usa o seu Chrome
 npm test          # contas de juros, imposto, formatação, relatório e HTML
 npm run coletar   # busca as APIs e regrava dados/indicadores.json
 npm run relatorio # monta o relatório, salva em relatorios/ e envia (imagem, senão texto)
+npm run diario    # diário de decisões: o que falta escrever e o que venceu
+npm run estudo    # pergunta da semana, respostas e aproveitamento
 npm run chat-id   # descobre o seu chat_id do Telegram (para o .env.local)
 npm run serve     # http://localhost:8080
 npm run publicar  # monta dist/site
