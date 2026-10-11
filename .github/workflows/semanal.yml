@@ -23,6 +23,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Instalar as dependências
+        run: npm ci
+
       - name: Atualizar os indicadores
         run: node tools/coletar.mjs
 

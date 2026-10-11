@@ -154,5 +154,5 @@ O `carteira.example.json` no repositório é só o modelo, sem número nenhum.
 | Quando | O que |
 |---|---|
 | todo dia, 09h e 18h | coleta Selic, CDI, IPCA, dólar e publica o painel |
-| domingo, 18h | macro da semana + sua carteira + reserva + pergunta da semana no Telegram |
+| domingo, 18h | chega a imagem do relatório no Telegram (macro + carteira + reserva + pergunta da semana) |
 | a cada merge na `main` | confere os testes e republica o site |

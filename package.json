@@ -13,5 +13,8 @@
     "serve": "node tools/servidor.mjs",
     "publicar": "node tools/publicar.mjs",
     "icones": "node tools/gerar-icones.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.13.0"
   }
 }

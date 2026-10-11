@@ -8,6 +8,7 @@ import {
   encurtar,
   montarRelatorio,
   nivelDaReserva,
+  nivelDoCdi,
   numeroDaSemana,
   perguntaDaSemana,
   resumoMacro,
@@ -233,17 +234,24 @@ test('reserva detalhada separa medido de prometido', () => {
           dataAporte: '2026-02-01',
           medido: { dias: 252, total: 0.05, taxaAnual: 0.073, percentualDoCdi: 0.62 },
         },
+        {
+          nome: 'Cofrinho W',
+          saldo: 200,
+          dataAporte: '2026-02-01',
+          medido: { dias: 252, total: 0.07, taxaAnual: 0.102, percentualDoCdi: 0.86 },
+        },
         { nome: 'Cofrinho Z', saldo: 300, taxaCDI: 1.2 },
       ],
     },
     { custoMensal: 2350 },
   );
 
-  assert.match(texto, /Saldo\s+R\$ 2\.900,00/);
+  assert.match(texto, /Saldo\s+R\$ 3\.100,00/);
   assert.match(texto, /Conta corrente\s+1\.000,00/);
   assert.match(texto, /Caixinha X\s+1\.100,00/);
   assert.match(texto, /Caixinha X\s+13,20%\s+112% 🟢/);
-  assert.match(texto, /Cofrinho Y\s+7,30%\s+62% 🟡/);
+  assert.match(texto, /Cofrinho W\s+10,20%\s+86% 🟡/);
+  assert.match(texto, /Cofrinho Y\s+7,30%\s+62% 🔴/);
   assert.match(texto, /Cofrinho Z\s+120% do CDI/);
   // Só quem tem taxa prometida e nenhuma data vira pendência.
   assert.deepEqual([...pendencias], ['informe dataAporte e rendimento de Cofrinho Z para eu medir']);
@@ -282,6 +290,15 @@ test('cor da reserva é o progresso até a meta, não rentabilidade', () => {
   assert.equal(nivelDaReserva(5.9, 6).nome, 'ruim');
   assert.equal(nivelDaReserva(0.1, 6).nome, 'ruim');
   assert.equal(nivelDaReserva(0, 6).nome, 'muito ruim');
+});
+
+test('faixa do % do CDI compara com a promessa quando existe', () => {
+  assert.equal(nivelDoCdi(1.22).nome, 'bom');
+  assert.equal(nivelDoCdi(0.86).nome, 'ruim');
+  assert.equal(nivelDoCdi(0.62).nome, 'muito ruim');
+  assert.equal(nivelDoCdi(1.12, 1.1).nome, 'bom'); // entregou a promessa de 110%
+  assert.equal(nivelDoCdi(0.86, 1.4).nome, 'ruim'); // prometeu 140% e não veio
+  assert.equal(nivelDoCdi(null, 1.2), null);
 });
 
 test('taxa equivalente a partir da data do aporte', () => {

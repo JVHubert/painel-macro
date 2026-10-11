@@ -1,9 +1,11 @@
 // Monta o relatório semanal: macro do painel + cotação das posições + reserva + pergunta da semana.
 // Uso: npm run relatorio   (envia pelo canal configurado e salva em relatorios/)
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { acumuladoDesde, compararComCdi, filtrarDesde, paraSerie, taxaEquivalente, urlSgs, SERIES } from '../indicadores.js';
+import { acumuladoDesde, compararComCdi, filtrarDesde, formatarData, paraSerie, taxaEquivalente, urlSgs, SERIES } from '../indicadores.js';
 import { deslocarDias, montarRelatorio, resumoMacro, resumoPosicao } from '../relatorio.js';
-import { enviarSemDerrubar } from './notificar.mjs';
+import { montarHtml } from '../relatorioHtml.js';
+import { renderizar } from './imagem.mjs';
+import { enviarFoto, enviarSemDerrubar } from './notificar.mjs';
 
 const YAHOO = 'https://query1.finance.yahoo.com/v8/finance/chart';
 const DADOS = new URL('../dados/indicadores.json', import.meta.url);
@@ -151,4 +153,28 @@ const texto = montarRelatorio({
 await mkdir(PASTA, { recursive: true });
 await writeFile(new URL(`${HOJE}.md`, PASTA), `${texto}\n`, 'utf8');
 console.log(`relatório salvo em relatorios/${HOJE}.md`);
-await enviarSemDerrubar(texto, { titulo: 'Painel macro - relatorio semanal' });
+
+// A imagem (com cor de verdade) é o canal principal; o texto é a reserva.
+const dadosComuns = {
+  data: HOJE,
+  painel,
+  posicoes,
+  reserva: medirReserva(carteira.reserva),
+  receitaMensal: carteira.receitaMensal,
+  custoMensal: carteira.custoMensal,
+  aporteMensal: carteira.aporteMensal,
+  avisos,
+};
+
+let enviado = null;
+try {
+  const png = await renderizar(montarHtml(dadosComuns));
+  await writeFile(new URL(`${HOJE}.png`, PASTA), png);
+  enviado = await enviarFoto(png, { legenda: `📊 Relatório semanal — ${formatarData(HOJE)}` });
+  console.log(`imagem salva em relatorios/${HOJE}.png (${Math.round(png.length / 1024)} KB)`);
+  if (enviado) console.log(`imagem enviada por ${enviado.canal}`);
+} catch (erro) {
+  console.log(`::warning::a imagem não saiu (${erro.message}) — vou mandar em texto`);
+}
+
+if (!enviado) await enviarSemDerrubar(texto, { titulo: 'Painel macro - relatorio semanal' });

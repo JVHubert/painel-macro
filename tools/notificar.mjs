@@ -59,6 +59,28 @@ async function enviarNtfy(texto, { titulo, topico }) {
   return { canal: 'ntfy' };
 }
 
+// A imagem é o canal principal (cor de verdade); o texto fica como reserva.
+export async function enviarFoto(png, { legenda = 'Relatório semanal' } = {}) {
+  const token = process.env.TELEGRAM_TOKEN;
+  const chat = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chat) return null;
+
+  const formulario = new FormData();
+  formulario.append('chat_id', chat);
+  formulario.append('caption', legenda);
+  formulario.append('photo', new Blob([png], { type: 'image/png' }), 'relatorio.png');
+
+  const resposta = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    method: 'POST',
+    body: formulario,
+  });
+  const devolvido = await resposta.json().catch(() => ({}));
+  if (!resposta.ok || devolvido.ok === false) {
+    throw new Error(`Telegram recusou a foto (${resposta.status}): ${devolvido.description ?? 'sem detalhe'}`);
+  }
+  return { canal: 'telegram-foto' };
+}
+
 // O relatório já ficou salvo em relatorios/, então falha de envio não derruba o trabalho.
 export async function enviarSemDerrubar(texto, opcoes = {}) {
   try {

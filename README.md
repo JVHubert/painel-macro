@@ -45,29 +45,29 @@ Conteúdo educativo. **Não é recomendação de investimento.**
 
 ## Relatório semanal
 
-Todo domingo às 18h (Brasília) o workflow "Relatório semanal" monta e envia:
+Todo domingo às 18h (Brasília) o workflow "Relatório semanal" monta e **envia uma imagem** no Telegram, com tabelas e cores de verdade:
 
 - **Macro** — Selic, CDI, IPCA 12 meses, juro real e dólar, com a variação da semana.
-- **Carteira** — cada posição com preço atual, valor de mercado, seu resultado desde a compra e quanto o CDI teria rendido no mesmo período.
-- **Reserva** — meses de custo cobertos e quanto falta para os 6 meses.
-- **Aporte** — a meta mensal que você definiu.
+- **Carteira** — cada lote com valor aplicado, valor de hoje, seu resultado e quanto o CDI teria rendido desde a data da compra.
+- **Reserva** — saldo, meses de custo cobertos, quanto cada caixinha rendeu medido contra o CDI, e o que está prometido.
+- **Sobra do mês** e **aporte programado**.
 - **Pergunta da semana** — uma das 12 gira a cada domingo, para estudar com o `PROMPT.md`.
 
-Tudo isso fica arquivado em `relatorios/AAAA-MM-DD.md` na sua máquina. **Nada disso vai para o GitHub**: a carteira e os relatórios estão no `.gitignore`, e a sua cópia de segurança do histórico é o próprio Telegram.
+Tudo fica arquivado em `relatorios/AAAA-MM-DD.png` (e `.md`, em texto) na sua máquina — nada disso vai para o GitHub. A sua cópia de segurança do histórico é o próprio Telegram.
 
 ### Cores (formatação condicional)
 
-O relatório chega como **tabela monoespaçada** (o Telegram recebe dentro de `<pre>`, então as colunas ficam alinhadas). O Telegram **não aceita texto colorido** em mensagem — não existe essa opção — então a cor vira emoji. A faixa é sobre o número, não juízo de valor:
+A imagem sai com **cor de verdade** (azul, verde, cinza, mostarda e vermelho) e colunas alinhadas. A faixa é sobre o número, não juízo de valor:
 
-| Emoji | Faixa | Exemplo |
-|---|---|---|
-| 🔵 | +20% ou mais | sua ação subiu 31% na semana |
-| 🟢 | positivo | rendimento de 13% ao ano |
-| ⚪ | perto de zero (±1%) | dólar estável |
-| 🟡 | negativo | imposto, inflação, prejuízo pequeno |
-| 🔴 | −20% ou menos | queda forte |
+| Cor | Faixa |
+|---|---|
+| 🔵 azul | +20% ou mais |
+| 🟢 verde | positivo |
+| ⚪ cinza | perto de zero (±1%) |
+| 🟡 mostarda | negativo |
+| 🔴 vermelho | −20% ou menos |
 
-No painel do site a mesma faixa é cor de verdade (azul, verde, cinza, mostarda, vermelho), com a legenda no rodapé. Taxas como Selic e CDI ficam sem cor de propósito: ali a variação em p.p. não é resultado seu. A reserva de emergência usa uma regra própria — a cor mostra o progresso até a meta de meses, não rentabilidade.
+A imagem é montada a partir de `relatorioHtml.js` e renderizada em PNG por `tools/imagem.mjs`, que usa o Chrome que já existe na máquina — não baixa navegador nenhum. Se o Chrome não estiver por perto (`CHROME=<caminho>` para apontar o seu), o relatório cai automaticamente para a versão em texto, com os mesmos números e o emoji no lugar da cor (o Telegram não aceita texto colorido em mensagem — por isso a imagem).
 
 ### Como preencher o `carteira.json`
 
