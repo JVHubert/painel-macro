@@ -176,7 +176,8 @@ O comando cria um bloco em `diario/decisoes.md` (arquivo fora do git) e você pr
 ### Trilha de estudo (`npm run estudo`)
 
 ```powershell
-npm run estudo -- novo   # cria o bloco desta semana com a pergunta
+npm run estudo -- novo                  # cria o bloco desta semana com a pergunta
+npm run estudo -- responder 1126,83     # registra a resposta e corrige na hora
 npm run estudo
 ```
 
@@ -184,6 +185,11 @@ A pergunta da semana é a mesma que chega no relatório de domingo. Responda **p
 ajuda**, registre em `estudo/respostas.md` e só depois peça a correção com o `PROMPT.md`
 aberto. O painel mostra o aproveitamento das semanas. Antes de abrir a conversa com o
 professor de IA, rode `npm run contexto` e cole o bloco que ele imprime.
+
+Nas perguntas de conta o sistema confere sozinho (`responder` aceita `1126,83` ou `1126.83`,
+com ou sem `R$`) e guarda o gabarito no bloco, com 1% de tolerância: "certo (gabarito …)" ou
+"errado — gabarito …. Dica: …". Nas de conceito, quem corrige é o professor, e você escreve o
+resultado em `corrigido:`.
 
 Ordem sugerida para os primeiros blocos (um por semana, no ritmo da pergunta que chega):
 

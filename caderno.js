@@ -15,9 +15,9 @@ import { deslocarDias, tabela } from './relatorio.js';
 import { formatarData, formatarNumero, formatarPercentual, nivelDeResultado } from './indicadores.js';
 
 export const CAMPOS_DECISAO = ['tipo', 'valor', 'tese', 'espero', 'provacao', 'revisarEm', 'revisado'];
-export const CAMPOS_RESPOSTA = ['pergunta', 'resposta', 'corrigido'];
-// Campos que você preenche depois (na revisão), então não contam como pendência.
-export const CAMPOS_OPCIONAIS = ['revisado', 'corrigido'];
+export const CAMPOS_RESPOSTA = ['pergunta', 'resposta', 'gabarito', 'corrigido'];
+// Campos que você preenche depois (na revisão ou na correção), então não contam como pendência.
+export const CAMPOS_OPCIONAIS = ['revisado', 'corrigido', 'gabarito'];
 export const DIAS_PADRAO = 90;
 
 export function lerEntradas(texto) {
@@ -77,6 +77,73 @@ export function situacao(entrada, hoje, campos = CAMPOS_DECISAO) {
 
 export function dataDeRevisao(hoje, dias = DIAS_PADRAO) {
   return deslocarDias(hoje, dias);
+}
+
+// A resposta escrita à mão vira número: "1.126,83", "1126,83", "R$ 1.126,83", "7.5", "-45,76".
+// Ponto sozinho com três casas depois conta como separador de milhar ("1.126" = 1126).
+export function lerNumeroBr(texto) {
+  const limpo = String(texto ?? '').replace(/[^\d,.-]/g, '');
+  if (!/\d/.test(limpo)) return null;
+  const normalizado = limpo.includes(',')
+    ? limpo.replace(/\./g, '').replace(/,/, '.')
+    : /^\d{1,3}(\.\d{3})+$/.test(limpo)
+      ? limpo.replace(/\./g, '')
+      : limpo;
+  const numero = Number(normalizado);
+  return Number.isFinite(numero) ? numero : null;
+}
+
+// Compara a resposta com o gabarito. `tolerancia` é o erro relativo aceito (0,01 = 1%).
+export function corrigirConta(resposta, gabarito, tolerancia = 0.01) {
+  const numero = lerNumeroBr(resposta);
+  if (numero === null || gabarito === null || gabarito === undefined || gabarito === '') return null;
+  const exato = Number(gabarito);
+  if (!Number.isFinite(exato)) return null;
+  const diferenca = Math.abs(numero - exato);
+  const referencia = Math.abs(exato);
+  // Gabarito zero: sem relativo, a tolerância vale em valor absoluto.
+  const erro = referencia < 1e-9 ? diferenca : diferenca / referencia;
+  return { numero, erro, certo: erro <= tolerancia };
+}
+
+// A frase que o JV lê depois de responder, igual no terminal e no arquivo.
+export function textoDaCorrecao({ certo, gabarito, dica } = {}) {
+  const numero = formatarNumero(Number(gabarito), 2);
+  return certo ? `certo (gabarito ${numero})` : `errado — gabarito ${numero}${dica ? `. Dica: ${dica}` : ''}`;
+}
+
+// Reescreve campos de um bloco que já existe, sem tocar no resto do arquivo.
+// Campo que não estava lá entra no fim do bloco. Devolve null quando o bloco não existe.
+export function definirCampos(texto, { titulo, campos = {}, ordem = [] } = {}) {
+  const chaves = ordem.length ? ordem : Object.keys(campos);
+  const linhas = String(texto ?? '').split('\n');
+  const inicio = linhas.findIndex((linha) => {
+    const cabecalho = linha.match(/^##\s+(.*)$/);
+    if (!cabecalho) return false;
+    const [, ...resto] = cabecalho[1].split('·');
+    return resto.join('·').trim() === String(titulo);
+  });
+  if (inicio === -1) return null;
+
+  const fimDoArquivo = linhas.findIndex((linha, indice) => indice > inicio && /^##\s/.test(linha));
+  const fim = fimDoArquivo === -1 ? linhas.length : fimDoArquivo;
+
+  const escritos = new Set();
+  for (let i = inicio + 1; i < fim; i += 1) {
+    const campo = linhas[i].match(/^-\s*([^:]+):/);
+    const chave = campo?.[1].trim();
+    if (!chave || !(chave in campos)) continue;
+    linhas[i] = `- ${chave}: ${campos[chave]}`;
+    escritos.add(chave);
+  }
+
+  const novos = chaves.filter((chave) => chave in campos && !escritos.has(chave));
+  if (novos.length) {
+    let posicao = fim;
+    while (posicao > inicio + 1 && linhas[posicao - 1].trim() === '') posicao -= 1;
+    linhas.splice(posicao, 0, ...novos.map((chave) => `- ${chave}: ${campos[chave]}`));
+  }
+  return linhas.join('\n');
 }
 
 function linhaFato(entrada, fato) {

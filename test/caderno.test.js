@@ -2,15 +2,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CAMPOS_DECISAO,
+  CAMPOS_RESPOSTA,
   adicionarBloco,
+  corrigirConta,
   criarBloco,
   dataDeRevisao,
+  definirCampos,
   diasAte,
   faltando,
   lerEntradas,
+  lerNumeroBr,
   painelDoDiario,
   painelDoEstudo,
   situacao,
+  textoDaCorrecao,
 } from '../caderno.js';
 
 const EXEMPLO = `# Diário de decisões
@@ -122,4 +127,69 @@ test('diário vazio explica como começar', () => {
   const painel = painelDoDiario({ texto: '', hoje: '2026-10-11' });
   assert.match(painel, /DIÁRIO VAZIO/);
   assert.match(painel, /npm run diario -- novo/);
+});
+
+test('lerNumeroBr entende vírgula, ponto, R$ e negativo', () => {
+  assert.equal(lerNumeroBr('1126,83'), 1126.83);
+  assert.equal(lerNumeroBr('1.126,83'), 1126.83);
+  assert.equal(lerNumeroBr('R$ 1.126,83'), 1126.83);
+  assert.equal(lerNumeroBr(' 7.5 '), 7.5);
+  assert.equal(lerNumeroBr('-45,76'), -45.76);
+  assert.equal(lerNumeroBr('1.126'), 1126); // ponto com três casas depois é milhar
+  assert.equal(lerNumeroBr('não sei'), null);
+  assert.equal(lerNumeroBr(''), null);
+});
+
+test('corrigirConta aceita até 1% de erro e barra o resto', () => {
+  // 1.000 a 1% ao mês por 12 meses, na mão: 1000 × 1,01 ^ 12 = 1126,825
+  const gabarito = 1000 * 1.01 ** 12;
+  assert.equal(corrigirConta('1126,83', gabarito, 0.01).certo, true);
+  assert.equal(corrigirConta('1126,825', gabarito, 0.01).certo, true);
+  assert.equal(corrigirConta('1138,09', gabarito, 0.01).certo, true); // 1% acima, no limite
+  assert.equal(corrigirConta('1150', gabarito, 0.01).certo, false); // 2% acima
+  assert.equal(corrigirConta('1126,83', gabarito, 0.01).erro < 0.01, true);
+  assert.equal(corrigirConta('sei lá', gabarito, 0.01), null);
+  assert.equal(corrigirConta('10', null, 0.01), null);
+  // Gabarito zero: aqui a tolerância vale em valor absoluto, senão nada seria comparável.
+  assert.equal(corrigirConta('0', 0, 0.01).certo, true);
+  assert.equal(corrigirConta('0,5', 0, 0.01).certo, false);
+});
+
+test('o texto da correção diz certo, errado e a dica', () => {
+  assert.equal(textoDaCorrecao({ certo: true, gabarito: 1000 * 1.01 ** 12 }), 'certo (gabarito 1.126,83)');
+  assert.equal(
+    textoDaCorrecao({ certo: false, gabarito: 1000 * 1.01 ** 12, dica: 'juros compostos' }),
+    'errado — gabarito 1.126,83. Dica: juros compostos',
+  );
+  assert.equal(textoDaCorrecao({ certo: false, gabarito: Math.log(2) / Math.log(1.1) }), 'errado — gabarito 7,27');
+});
+
+test('definirCampos reescreve só o bloco pedido', () => {
+  const texto = [
+    '# Trilha',
+    '',
+    '## 2026-10-11 · 41',
+    '- pergunta: velha',
+    '- resposta: ',
+    '- corrigido:',
+    '',
+    '## 2026-10-18 · 42',
+    '- pergunta: outra',
+    '- resposta: já respondi',
+    '- corrigido:',
+    '',
+  ].join('\n');
+  const novo = definirCampos(texto, {
+    titulo: '41',
+    campos: { pergunta: 'nova', resposta: '1126,83', gabarito: '1126.83', corrigido: 'certo' },
+    ordem: CAMPOS_RESPOSTA,
+  });
+
+  // Campo que já existia fica no lugar; o que faltava entra no fim do bloco.
+  assert.match(
+    novo,
+    /## 2026-10-11 · 41\n- pergunta: nova\n- resposta: 1126,83\n- corrigido: certo\n- gabarito: 1126\.83/,
+  );
+  assert.match(novo, /## 2026-10-18 · 42\n- pergunta: outra\n- resposta: já respondi/);
+  assert.equal(definirCampos(texto, { titulo: '99', campos: { resposta: 'x' } }), null);
 });
