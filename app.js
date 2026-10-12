@@ -51,7 +51,7 @@ function cartaoHtml(cartao) {
       <p class="variacao ${nivelVariacao ? `nivel-${nivelVariacao.classe}` : ''}">${linhaVariacao(cartao)}</p>
       ${grafico}
       <p class="sobre">${cartao.sobre}</p>
-      <p class="referencia">dado de ${formatarData(cartao.referencia)}</p>
+      <p class="referencia">${cartao.rotuloReferencia ?? 'dado de'} ${formatarData(cartao.referencia)}</p>
     </article>
   `;
 }

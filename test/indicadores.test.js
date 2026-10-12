@@ -176,7 +176,7 @@ const BRUTO = {
 };
 
 test('monta os cartões do painel', () => {
-  const painel = montarIndicadores(BRUTO, { atualizadoEm: '2026-11-10T12:00:00.000Z' });
+  const painel = montarIndicadores(BRUTO, { hoje: '2026-11-10', atualizadoEm: '2026-11-10T12:00:00.000Z' });
   assert.equal(painel.atualizadoEm, '2026-11-10T12:00:00.000Z');
   assert.deepEqual(
     painel.indicadores.map((c) => c.id),
@@ -187,6 +187,7 @@ test('monta os cartões do painel', () => {
   assert.equal(meta.valor, 13.75);
   assert.equal(meta.variacao, -1.25); // caiu de 15% para 13,75%
   assert.equal(meta.referencia, '2026-11-04');
+  assert.equal(meta.rotuloReferencia, 'em vigor desde');
   assert.equal(meta.serie.length, 2);
   assert.ok(meta.sobre.length > 20);
 
@@ -203,6 +204,26 @@ test('monta os cartões do painel', () => {
   assert.ok(Math.abs(dolar.variacao + 0.00520138) < 1e-9);
   assert.equal(dolar.referencia, '2026-10-09');
   assert.equal(dolar.serie.length, 2);
+});
+
+test('meta Selic ignora os pontos com data futura', () => {
+  // A série real vem com pontos repetidos até a próxima reunião do Copom — inclusive com data no futuro.
+  const bruto = {
+    metaSelic: [
+      { data: '2026-09-20', valor: 14 },
+      { data: '2026-10-03', valor: 13.75 },
+      { data: '2026-10-11', valor: 13.75 },
+      { data: '2026-10-25', valor: 13.75 },
+      { data: '2026-11-04', valor: 13.75 },
+    ],
+  };
+  const painel = montarIndicadores(bruto, { hoje: '2026-10-11', atualizadoEm: '2026-10-11T12:00:00.000Z' });
+  const meta = painel.indicadores.find((c) => c.id === 'meta-selic');
+  assert.equal(meta.valor, 13.75);
+  // "em vigor desde" é a data da última mudança, não a última data (futura) da série.
+  assert.equal(meta.referencia, '2026-10-03');
+  assert.equal(meta.rotuloReferencia, 'em vigor desde');
+  assert.deepEqual(meta.serie.map((p) => p.data), ['2026-09-20', '2026-10-03']);
 });
 
 test('sem rede o painel não quebra: valores nulos', () => {

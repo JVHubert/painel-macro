@@ -167,12 +167,15 @@ const EXPLICACOES = {
 };
 
 // Dados brutos das APIs -> cartões prontos para a tela.
-export function montarIndicadores(bruto = {}, { atualizadoEm = new Date().toISOString() } = {}) {
+export function montarIndicadores(bruto = {}, { hoje = hojeEmBrasilia(), atualizadoEm = new Date().toISOString() } = {}) {
   const serie = (chave) => bruto[chave] ?? [];
   const ultimo = (chave) => serie(chave).at(-1) ?? null;
 
-  const meta = ultimo('metaSelic');
-  const metaAntes = meta ? valorAntes(serie('metaSelic'), deslocarMeses(meta.data, -12)) : null;
+  // A série da meta Selic vem com datas futuras (até a próxima reunião do Copom): só valem as de hoje para trás.
+  const metaSerie = serie('metaSelic').filter((ponto) => ponto.data <= hoje);
+  const meta = metaSerie.at(-1) ?? null;
+  const metaMudancas = mudancas(metaSerie);
+  const metaAntes = meta ? valorAntes(metaSerie, deslocarMeses(meta.data, -12)) : null;
 
   const cdi = ultimo('cdiDiaria');
   const fim = cdi?.data ?? null;
@@ -202,12 +205,13 @@ export function montarIndicadores(bruto = {}, { atualizadoEm = new Date().toISOS
       unidade: '% ao ano',
       prefixoValor: '',
       valor: meta?.valor ?? null,
-      referencia: meta?.data ?? null,
+      referencia: metaMudancas.at(-1)?.data ?? null,
+      rotuloReferencia: 'em vigor desde',
       fonte: `BACEN · SGS ${SERIES.metaSelic}`,
       variacao: meta && metaAntes ? meta.valor - metaAntes.valor : null,
       rotuloVariacao: 'vs. 12 meses atrás',
       extra: null,
-      serie: ultimos(mudancas(serie('metaSelic')), 12),
+      serie: ultimos(metaMudancas, 12),
     },
     {
       id: 'cdi',
