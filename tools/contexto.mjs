@@ -3,11 +3,11 @@
 import { hojeEmBrasilia } from '../indicadores.js';
 import { lerEntradas } from '../caderno.js';
 import { blocoDeContexto } from '../contexto.js';
-import { lerJson, lerTexto } from './arquivos.mjs';
+import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
 
-const CARTEIRA = new URL('../carteira.json', import.meta.url);
-const DIARIO = new URL('../diario/decisoes.md', import.meta.url);
-const ESTUDO = new URL('../estudo/respostas.md', import.meta.url);
+const CARTEIRA = dadosUrl('carteira.json');
+const DIARIO = dadosUrl('diario/decisoes.md');
+const ESTUDO = dadosUrl('estudo/respostas.md');
 
 const carteira = await lerJson(
   CARTEIRA,

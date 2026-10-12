@@ -13,10 +13,11 @@ import {
   painelDoDiario,
   situacao,
 } from '../caderno.js';
+import { dadosUrl } from './arquivos.mjs';
 import { serieCdi, variacaoDesde } from './mercado.mjs';
 
-const ARQUIVO = new URL('../diario/decisoes.md', import.meta.url);
-const PASTA = new URL('../diario/', import.meta.url);
+const ARQUIVO = dadosUrl('diario/decisoes.md');
+const PASTA = dadosUrl('diario/');
 const HOJE = hojeEmBrasilia();
 const EXEMPLO = 'diario/decisoes.example.md';
 

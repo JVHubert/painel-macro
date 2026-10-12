@@ -19,6 +19,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # A carteira, o diário e o estudo vivem num repositório privado. Sem o token DADOS_TOKEN
+      # (ou se ele ainda não existir), o relatório sai igual, só sem as partes pessoais.
+      - name: Trazer os dados privados, quando o token existir
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: JVHubert/painel-macro-dados
+          token: ${{ secrets.DADOS_TOKEN }}
+          path: privado
+
+      - name: Apontar as ferramentas para a pasta privada
+        run: |
+          if [ -f privado/carteira.json ]; then
+            echo "DADOS_DIR=privado/" >> "$GITHUB_ENV"
+            echo "os dados vieram do repositório privado"
+          else
+            echo "sem os dados privados nesta execução: sigo com o secret CARTEIRA_JSON"
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22

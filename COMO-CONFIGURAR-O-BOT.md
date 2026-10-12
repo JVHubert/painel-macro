@@ -119,15 +119,44 @@ O painel fica em **https://jvhubert.github.io/painel-macro/** e dá para instala
 - Agendamento do GitHub pode atrasar alguns minutos quando o serviço está cheio. Não é bug seu.
 - **Importante:** o GitHub desativa workflows agendados depois de 60 dias sem nenhuma atividade no repositório. O "Atualizar indicadores" roda duas vezes por dia e mantém isso vivo sozinho.
 
-## Onde fica o dado da sua carteira
+## Onde ficam os seus dados (repositório privado)
 
-A sua carteira e os relatórios **não vão para o GitHub**. O `carteira.json` e a pasta `relatorios/` estão no `.gitignore`; o que o relatório semanal do GitHub usa vem do secret `CARTEIRA_JSON`. Para subir ou atualizar:
+Os seus dados **nunca vão para o repositório público**. Eles ficam em dois lugares:
+
+1. **Na sua máquina** — `carteira.json`, `diario/decisoes.md` e `estudo/respostas.md`, que é onde
+   você edita (e onde as ferramentas leem por padrão).
+2. **Num repositório privado**, `https://github.com/JVHubert/painel-macro-dados` — a sua cópia de
+   segurança, e o que o relatório de domingo lê quando roda no GitHub. Ele já está criado, com os
+   três arquivos dentro. Só você tem acesso.
+
+Para o GitHub conseguir ler esse repositório, falta **você** criar um token (eu não tenho como criar
+token na sua conta):
+
+1. Abra https://github.com/settings/personal-access-tokens/new (ou, no site: seu avatar → Settings →
+   Developer settings → Personal access tokens → Fine-grained tokens → Generate new token).
+2. **Token name:** `painel-macro-dados`. **Expiration:** 1 ano.
+3. **Repository access:** marque *Only select repositories* e escolha **painel-macro-dados**.
+4. **Permissions → Repository permissions → Contents:** escolha **Read and write**.
+5. **Generate token** e copie o valor (começa com `github_pat_` e aparece uma única vez).
+6. Na pasta do projeto, rode o comando abaixo, cole o token quando ele pedir e aperte Enter:
+
+```powershell
+& "C:\Program Files\GitHub CLI\gh.exe" secret set DADOS_TOKEN
+```
+
+Feito isso, o relatório de domingo passa a ler o diário e a trilha do repositório privado — é assim
+que o placar e os itens do diário aparecem na imagem. Sem o token, o relatório continua saindo,
+apenas sem essas partes pessoais.
+
+O `CARTEIRA_JSON` continua valendo como reserva, para o caso de o repositório privado não responder:
 
 ```powershell
 Get-Content carteira.json -Raw | & "C:\Program Files\GitHub CLI\gh.exe" secret set CARTEIRA_JSON
 ```
 
-O `carteira.example.json` no repositório é só o modelo, sem número nenhum.
+O `carteira.example.json` no repositório público é só o modelo, sem número nenhum. **Quando você
+mudar a carteira, o diário ou o estudo aqui no PC, me avise:** eu subo para o repositório privado
+(na próxima parte isso vira um comando).
 
 ## Problemas comuns
 

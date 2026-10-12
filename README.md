@@ -222,18 +222,24 @@ Ordem sugerida para os primeiros blocos (um por semana, no ritmo da pergunta que
 
 ## Privacidade
 
-Nada pessoal seu vive no repositório:
+Nada pessoal seu vive no repositório público:
 
-| Na sua máquina (fora do git) | No GitHub, como secret |
+| Na sua máquina (fora do git) | No GitHub |
 |---|---|
-| `.env.local` — token do bot | `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` |
-| `carteira.json` — seus números | `CARTEIRA_JSON` |
+| `.env.local` — token do bot | secret `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` |
+| `carteira.json`, `diario/decisoes.md`, `estudo/respostas.md` | repositório **privado** `JVHubert/painel-macro-dados` (lido com o token no secret `DADOS_TOKEN`) |
+| `carteira.json` (reserva) | secret `CARTEIRA_JSON` |
 | `relatorios/` — histórico do que chegou | — (o histórico de verdade é o próprio Telegram) |
-| `diario/decisoes.md` e `estudo/respostas.md` — suas teses e respostas | — |
 
-Quando mudar seus dados, atualize os dois lugares: o arquivo local e o secret. O que está no repositório é código, indicadores públicos e o `carteira.example.json` sem número nenhum.
+As ferramentas leem os arquivos pessoais da pasta do projeto; quando a variável `DADOS_DIR` está
+definida (é o que o workflow faz, apontando para a pasta `privado/`), elas leem de lá. É assim que o
+relatório do GitHub enxerga o seu diário e a sua trilha.
 
-Se um dia colar um token em lugar público (chat, print, issue), revogue no `@BotFather` com `/revoke` e atualize o `.env.local` e o secret — o valor antigo deixa de valer na hora.
+Quando mudar seus dados, atualize os dois lugares: o arquivo local e o repositório privado (ou o
+secret, no caso da carteira). O que está no repositório público é código, indicadores públicos e o
+`carteira.example.json` sem número nenhum.
+
+Se um dia colar um token em lugar público (chat, print, issue), revogue no `@BotFather` com `/revoke` e atualize o `.env.local` e o secret — o valor antigo deixa de valer na hora. O mesmo vale para o `DADOS_TOKEN`, que se revoga nas configurações do GitHub.
 
 ## Para aprender com ele
 

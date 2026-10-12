@@ -6,15 +6,15 @@ import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostr
 import { montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
-import { lerJson, lerTexto } from './arquivos.mjs';
+import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
 import { renderizar } from './imagem.mjs';
 import { cotacao, serieCdi } from './mercado.mjs';
 import { enviarFoto, enviarSemDerrubar } from './notificar.mjs';
 
 const DADOS = new URL('../dados/indicadores.json', import.meta.url);
-const CARTEIRA = new URL('../carteira.json', import.meta.url);
-const DIARIO = new URL('../diario/decisoes.md', import.meta.url);
-const ESTUDO = new URL('../estudo/respostas.md', import.meta.url);
+const CARTEIRA = dadosUrl('carteira.json');
+const DIARIO = dadosUrl('diario/decisoes.md');
+const ESTUDO = dadosUrl('estudo/respostas.md');
 const PASTA = new URL('../relatorios/', import.meta.url);
 const HOJE = hojeEmBrasilia();
 // `--seco` monta e salva o relatório sem enviar (para conferir a imagem antes de publicar).

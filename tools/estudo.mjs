@@ -24,11 +24,11 @@ import {
 import { hojeEmBrasilia } from '../indicadores.js';
 import { numeroDaSemana } from '../relatorio.js';
 import { perguntaDaSemana, perguntaPorTexto } from '../trilha.js';
-import { lerJson, lerTexto } from './arquivos.mjs';
+import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
 
-const ARQUIVO = new URL('../estudo/respostas.md', import.meta.url);
-const PASTA = new URL('../estudo/', import.meta.url);
-const DIARIO = new URL('../diario/decisoes.md', import.meta.url);
+const ARQUIVO = dadosUrl('estudo/respostas.md');
+const PASTA = dadosUrl('estudo/');
+const DIARIO = dadosUrl('diario/decisoes.md');
 const PAINEL = new URL('../dados/indicadores.json', import.meta.url);
 const HOJE = hojeEmBrasilia();
 const SEMANA = String(numeroDaSemana(HOJE));
