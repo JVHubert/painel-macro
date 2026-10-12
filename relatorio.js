@@ -2,11 +2,14 @@
 // Sai tudo em texto monoespaçado (o Telegram recebe dentro de <pre>), com colunas alinhadas.
 import {
   NIVEIS,
+  anualizarDiaria,
   formatarData,
   formatarNumero,
   formatarPercentual,
+  hojeEmBrasilia,
   legendaNiveis,
   nivelDeResultado,
+  valorAntes,
 } from './indicadores.js';
 
 const reais = (valor) => `R$ ${formatarNumero(valor, 2)}`;
@@ -55,14 +58,15 @@ export function variacaoPeriodo(serie, dias) {
   return fim.valor / base.valor - 1;
 }
 
-// Diferença em pontos percentuais (para taxas, não preços).
-export function deltaPeriodo(serie, dias) {
-  if (!Array.isArray(serie) || serie.length < 2) return null;
-  const fim = serie.at(-1);
-  const limite = deslocarDias(fim.data, -dias);
-  const base = [...serie].reverse().find((ponto) => ponto.data <= limite);
-  if (!base) return null;
-  return fim.valor - base.valor;
+// Diferença, em pontos percentuais, entre o último ponto até `hoje` e o ponto de `dias` antes.
+// `transformar` leva a taxa do ponto para a escala da conta (o CDI, por exemplo, vem ao dia).
+// Sem mudança no período, a diferença é 0 — e não "a última mudança contra a anterior".
+export function deltaPeriodo(serie, dias, { hoje, transformar = (valor) => valor } = {}) {
+  if (!Array.isArray(serie) || serie.length < 2 || !hoje) return null;
+  const fim = valorAntes(serie, hoje);
+  const base = valorAntes(serie, deslocarDias(hoje, -dias));
+  if (!fim || !base) return null;
+  return transformar(fim.valor) - transformar(base.valor);
 }
 
 // Largura na tela: emoji ocupa duas colunas, o resto ocupa uma.
@@ -240,7 +244,9 @@ export function blocoCarteira(posicoes) {
 }
 
 // Dados do macro em linhas prontas: o texto e o HTML saem da mesma fonte.
-export function dadosMacro(painel, { dias = 7 } = {}) {
+export function dadosMacro(painel, { dias = 7, hoje } = {}) {
+  // Sem `hoje` explícito, vale o dia dos dados do painel (o relatório roda no mesmo dia da coleta).
+  const dia = hoje ?? hojeEmBrasilia(painel?.atualizadoEm ? new Date(painel.atualizadoEm) : new Date());
   const achar = (id) => painel?.indicadores?.find((cartao) => cartao.id === id) ?? null;
   const semDado = (cartao) => !cartao || cartao.valor === null;
 
@@ -250,8 +256,11 @@ export function dadosMacro(painel, { dias = 7 } = {}) {
   const juroReal = achar('juro-real');
   const dolar = achar('dolar');
 
-  const deltaMeta = meta && !semDado(meta) ? deltaPeriodo(meta.serie, dias) : null;
-  const deltaCdi = cdi && !semDado(cdi) ? deltaPeriodo(cdi.serie, dias) : null;
+  const deltaMeta = meta && !semDado(meta) ? deltaPeriodo(meta.serie, dias, { hoje: dia }) : null;
+  const deltaCdi =
+    cdi && !semDado(cdi)
+      ? deltaPeriodo(cdi.serie, dias, { hoje: dia, transformar: (taxa) => anualizarDiaria(taxa) * 100 })
+      : null;
   const variacaoDolar = dolar && !semDado(dolar) ? variacaoPeriodo(dolar.serie, dias) : null;
   const emPontos = (valor) => `${seta(valor)}${formatarNumero(Math.abs(valor))} p.p.`;
 
@@ -283,8 +292,8 @@ export function dadosMacro(painel, { dias = 7 } = {}) {
   };
 }
 
-export function resumoMacro(painel, { dias = 7 } = {}) {
-  const { linhas, notas } = dadosMacro(painel, { dias });
+export function resumoMacro(painel, opcoes = {}) {
+  const { linhas, notas } = dadosMacro(painel, opcoes);
   const corpo = [['Indicador', 'Valor', 'Semana']];
   for (const linha of linhas) {
     const emoji = linha.fracao === undefined ? '' : ` ${nivelDeResultado(linha.fracao)?.emoji ?? ''}`.trimEnd();

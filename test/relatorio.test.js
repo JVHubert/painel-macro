@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NIVEIS, compararComCdi, legendaNiveis, nivelDeResultado, taxaEquivalente } from '../indicadores.js';
+import { NIVEIS, anualizarDiaria, compararComCdi, legendaNiveis, nivelDeResultado, taxaEquivalente } from '../indicadores.js';
 import {
   PERGUNTAS,
   deltaPeriodo,
@@ -82,9 +82,31 @@ test('variação de período usa o ponto mais recente até a data limite', () =>
     { data: '2026-10-11', valor: 121 },
   ];
   assert.ok(Math.abs(variacaoPeriodo(serie, 7) - 0.1) < 1e-12);
-  assert.ok(Math.abs(deltaPeriodo(serie, 7) - 11) < 1e-12);
+  assert.ok(Math.abs(deltaPeriodo(serie, 7, { hoje: '2026-10-11' }) - 11) < 1e-12);
   assert.equal(variacaoPeriodo(serie, 60), null);
   assert.equal(variacaoPeriodo([], 7), null);
+});
+
+test('deltaPeriodo olha a janela de hoje, não a última mudança', () => {
+  // Selic parada desde 17/09: numa semana sem Copom, a variação da semana é zero.
+  const meta = [
+    { data: '2026-06-18', valor: 14.25 },
+    { data: '2026-09-17', valor: 13.75 },
+    { data: '2026-10-10', valor: 13.75 },
+  ];
+  assert.equal(deltaPeriodo(meta, 7, { hoje: '2026-10-11' }), 0);
+
+  // CDI ao dia: 0,05% virou 0,06%. Ao ano isso é uma diferença grande, não 0,01.
+  const cdi = [
+    { data: '2026-09-30', valor: 0.05 },
+    { data: '2026-10-08', valor: 0.06 },
+  ];
+  const delta = deltaPeriodo(cdi, 7, { hoje: '2026-10-11', transformar: (taxa) => anualizarDiaria(taxa) * 100 });
+  assert.ok(Math.abs(delta - (anualizarDiaria(0.06) - anualizarDiaria(0.05)) * 100) < 1e-9);
+  assert.ok(delta > 2, 'a diferença anualizada passa de 2 p.p.');
+
+  // Sem `hoje` não há janela: devolve null em vez de chutar.
+  assert.equal(deltaPeriodo(meta, 7), null);
 });
 
 test('tabela alinha as colunas', () => {
@@ -129,7 +151,7 @@ test('macro sai em tabela alinhada', () => {
 
   assert.equal(linhas[0], 'MACRO');
   assert.equal(linhas[1], `Indicador${' '.repeat(7)}Valor  Semana`);
-  assert.match(bloco, /Meta Selic\s+13,75%\s+-0,25 p\.p\./);
+  assert.match(bloco, /Meta Selic\s+13,75%\s+=0,00 p\.p\./);
   assert.match(bloco, /CDI\s+13,65%\s+=0,00 p\.p\./);
   assert.match(bloco, /IPCA \(12m\)\s+4,58%/);
   assert.match(bloco, /Juro real\s+8,77%/);
