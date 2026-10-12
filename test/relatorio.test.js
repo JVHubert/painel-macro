@@ -219,8 +219,9 @@ test('dois lotes do mesmo papel ganham soma e o CDI de cada data', () => {
   assert.match(texto, /soma\s+R\$ 700,00\s+R\$ 630,00\s+-10,00% 🟡/);
   assert.match(texto, /10 cotas\s+50,00%\s+-45,0 p\.p\. 🔴/);
   assert.match(texto, /20 cotas\s+10,00%\s+-26,0 p\.p\. 🔴/);
-  // 200×1,50 + 500×1,10 = 850 → 630/850 - 1
-  assert.match(texto, /soma\s+R\$ 850,00\s+-25,88% 🔴/);
+  // 200×1,50 + 500×1,10 = 850
+  assert.match(texto, /Se o mesmo dinheiro tivesse ficado no CDI: R\$ 850,00 \(hoje: R\$ 630,00\)/);
+  assert.ok(!/soma\s+R\$ 850,00/.test(texto), 'a tabela do CDI não mistura R$ com %');
   assert.match(texto, /na semana 5,00% 🟢/);
 });
 

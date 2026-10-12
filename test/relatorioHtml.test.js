@@ -101,6 +101,8 @@ test('números do relatório aparecem formatados', () => {
   assert.match(html, /R\$ 700,00/);
   assert.match(html, /R\$ 630,00/);
   assert.match(html, /R\$ 850,00/);
+  assert.match(html, /Se o mesmo dinheiro tivesse ficado no CDI: R\$ 850,00 \(hoje: R\$ 630,00\)/);
+  assert.ok(!html.includes('<td>soma</td>'), 'a tabela do CDI não mistura R$ com %');
   assert.match(html, /−45,0 p\.p\./);
   assert.match(html, /R\$ 17\.000,00/);
   assert.match(html, /4,3 meses de custo \(meta 6\)/);

@@ -165,18 +165,15 @@ function carteiraHtml(posicoes) {
             lote.vsCdi,
           )}</tr>`,
       );
-      if (comCdi.length > 1 && totais.contraCdi !== null) {
-        linhasCdi.push(
-          `<tr class="totais"><td>soma</td><td class="dir">${reais(totais.noCdi)}</td>${td(
-            formatarPercentual(totais.contraCdi),
-            totais.contraCdi,
-          )}</tr>`,
-        );
-      }
       partes.push(
         '<p class="nota">Contra o CDI — o que o mesmo dinheiro teria rendido, cada lote desde a sua data:</p>',
         tabelaHtml(['Lote', 'CDI no período', 'Diferença'], linhasCdi),
       );
+      if (comCdi.length > 1 && totais.noCdi !== null && totais.mercado !== null) {
+        partes.push(
+          `<p class="nota">Se o mesmo dinheiro tivesse ficado no CDI: ${reais(totais.noCdi)} (hoje: ${reais(totais.mercado)})</p>`,
+        );
+      }
     }
   }
   return secao('Carteira', partes.join(''));

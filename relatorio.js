@@ -220,15 +220,13 @@ function tabelaDoTicker(ticker, lotes, pendencias) {
         `${seta(lote.vsCdi)}${formatarNumero(Math.abs(lote.vsCdi) * 100, 1)} p.p. ${lote.nivelVsCdi?.emoji ?? ''}`.trim(),
       ]);
     }
-    if (comCdi.length > 1 && totais.contraCdi !== null) {
-      linhasCdi.push([
-        'soma',
-        reais(totais.noCdi),
-        `${formatarPercentual(totais.contraCdi)} ${nivelDeResultado(totais.contraCdi)?.emoji ?? ''}`.trim(),
-      ]);
-    }
     blocos.push('Contra o CDI (o que o mesmo dinheiro teria rendido)');
     blocos.push(tabela(linhasCdi, { colunas: ['esq', 'dir', 'dir'] }));
+    if (comCdi.length > 1 && totais.noCdi !== null && totais.mercado !== null) {
+      blocos.push(
+        `Se o mesmo dinheiro tivesse ficado no CDI: ${reais(totais.noCdi)} (hoje: ${reais(totais.mercado)})`,
+      );
+    }
   }
   return blocos.join('\n');
 }
