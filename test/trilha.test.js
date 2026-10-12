@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { INICIO_TRILHA, TRILHA, ehPerguntaDeSimulacao, nivelDaTrilha, perguntaDaSemana } from '../trilha.js';
+import { INICIO_TRILHA, TRILHA, ehPerguntaDeSimulacao, nivelDaTrilha, perguntaDaSemana, perguntaPorTexto } from '../trilha.js';
 
 const painel = (valores) => ({ indicadores: Object.entries(valores).map(([id, valor]) => ({ id, valor })) });
 const gabarito = (id) => TRILHA[0].perguntas.find((pergunta) => pergunta.id === id).gabarito;
@@ -73,4 +73,11 @@ test('só a pergunta que compara com a poupança é do simulador', () => {
   assert.equal(ehPerguntaDeSimulacao(pergunta('n1-04')), false);
   assert.equal(ehPerguntaDeSimulacao(pergunta('n1-05')), false);
   assert.equal(ehPerguntaDeSimulacao(undefined), false);
+});
+
+test('a revisão reencontra a pergunta pelo texto guardado', () => {
+  assert.equal(perguntaPorTexto(pergunta('n1-07').texto).id, 'n1-07');
+  assert.equal(perguntaPorTexto(`  ${pergunta('n1-01').texto}  `).id, 'n1-01');
+  assert.equal(perguntaPorTexto('pergunta que não existe mais'), null);
+  assert.equal(perguntaPorTexto(undefined), null);
 });

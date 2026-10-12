@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   CAMPOS_DECISAO,
   CAMPOS_RESPOSTA,
+  MAXIMO_DE_REVISOES,
   adicionarBloco,
   corrigirConta,
   criarBloco,
@@ -10,10 +11,12 @@ import {
   definirCampos,
   diasAte,
   faltando,
+  historicoDeEstudo,
   lerEntradas,
   lerNumeroBr,
   painelDoDiario,
   painelDoEstudo,
+  revisoesDaSemana,
   situacao,
   textoDaCorrecao,
 } from '../caderno.js';
@@ -192,4 +195,105 @@ test('definirCampos reescreve só o bloco pedido', () => {
   );
   assert.match(novo, /## 2026-10-18 · 42\n- pergunta: outra\n- resposta: já respondi/);
   assert.equal(definirCampos(texto, { titulo: '99', campos: { resposta: 'x' } }), null);
+});
+
+const BLOCO = (semana, pergunta, resposta, corrigido, extra = []) =>
+  [`## 2026-01-01 · ${semana}`, `- pergunta: ${pergunta}`, `- resposta: ${resposta}`, `- corrigido: ${corrigido}`, ...extra].join('\n');
+
+test('o histórico do estudo junta as respostas de cada pergunta', () => {
+  const entradas = lerEntradas(
+    [
+      BLOCO(1, 'A', '1', 'errado'),
+      BLOCO(2, 'B', '', ''), // sem resposta e sem resultado: fica de fora
+      BLOCO(3, 'A', '1126,83', 'certo', ['- gabarito: 1126.83']),
+    ].join('\n\n'),
+  );
+
+  const historico = historicoDeEstudo(entradas);
+  assert.equal(historico.length, 2); // B entra na lista, mas ainda sem resultado
+  assert.equal(historico[0].pergunta, 'A');
+  assert.deepEqual(historico[0].resultados, ['errado', 'certo']);
+  assert.deepEqual(historico[0].datas, ['2026-01-01', '2026-01-01']);
+  assert.equal(historico[0].ultimaData, '2026-01-01');
+  assert.equal(historico[0].gabarito, 1126.83);
+  assert.deepEqual(historico[1].resultados, []);
+});
+
+test('a revisão espaçada segue cada linha da tabela do plano', () => {
+  const comResultados = (resultados) => [
+    { pergunta: 'A', resultados, datas: ['2026-01-01'], ultimaData: '2026-01-01', gabarito: null },
+  ];
+
+  // errado volta em 1 semana
+  assert.equal(revisoesDaSemana(comResultados(['errado']), '2026-01-07').length, 0);
+  assert.equal(revisoesDaSemana(comResultados(['errado']), '2026-01-08')[0].voltaEm, '2026-01-08');
+
+  // parcial volta em 3 semanas
+  assert.equal(revisoesDaSemana(comResultados(['parcial']), '2026-01-21').length, 0);
+  assert.equal(revisoesDaSemana(comResultados(['parcial']), '2026-01-22').length, 1);
+
+  // certo na 1ª revisão volta em 8 semanas
+  assert.equal(revisoesDaSemana(comResultados(['errado', 'certo']), '2026-02-25').length, 0);
+  assert.equal(revisoesDaSemana(comResultados(['errado', 'certo']), '2026-02-26').length, 1);
+
+  // certo duas vezes seguidas na revisão: aposentada
+  assert.equal(revisoesDaSemana(comResultados(['errado', 'certo', 'certo']), '2027-01-01').length, 0);
+
+  // acertou de primeira também confirma uma vez antes de aposentar
+  assert.equal(revisoesDaSemana(comResultados(['certo']), '2026-02-25').length, 0);
+  assert.equal(revisoesDaSemana(comResultados(['certo']), '2026-02-26').length, 1);
+});
+
+test('no máximo duas revisões por semana, as mais antigas primeiro', () => {
+  const item = (pergunta, data) => ({
+    pergunta,
+    resultados: ['errado'],
+    datas: [data],
+    ultimaData: data,
+    gabarito: null,
+  });
+  const historico = [item('nova', '2026-03-10'), item('antiga', '2026-01-01'), item('meio', '2026-02-01')];
+
+  const revisoes = revisoesDaSemana(historico, '2026-03-20');
+  assert.equal(MAXIMO_DE_REVISOES, 2);
+  assert.equal(revisoes.length, 2);
+  assert.deepEqual(
+    revisoes.map((revisao) => revisao.pergunta),
+    ['antiga', 'meio'],
+  );
+});
+
+test('pergunta respondida de novo depois do vencimento sai da fila', () => {
+  const historico = historicoDeEstudo(
+    lerEntradas(
+      [
+        [
+          '## 2026-01-01 · 1',
+          '- pergunta: A',
+          '- resposta: 5',
+          '- corrigido: errado',
+          '',
+          '## 2026-01-12 · 2 · revisão 1',
+          '- pergunta: A',
+          '- resposta: outro texto',
+          '- corrigido:',
+        ].join('\n'),
+      ].join('\n\n'),
+    ),
+  );
+  assert.deepEqual(historico[0].datas, ['2026-01-01', '2026-01-12']);
+  assert.deepEqual(historico[0].resultados, ['errado']);
+  assert.equal(revisoesDaSemana(historico, '2026-01-20').length, 0);
+});
+
+test('o painel do estudo mostra as revisões que venceram', () => {
+  const texto = BLOCO(1, 'A', '5', 'errado');
+
+  const comRevisao = painelDoEstudo({ texto, hoje: '2026-01-10', numeroSemana: 2, pergunta: 'Pergunta nova' });
+  assert.match(comRevisao, /REVISÕES DESTA SEMANA/);
+  assert.match(comRevisao, /- A\n {2}você errou em 01\/01\/2026/);
+  assert.match(comRevisao, /npm run estudo -- revisar/);
+
+  const cedo = painelDoEstudo({ texto, hoje: '2026-01-05', numeroSemana: 2, pergunta: 'Pergunta nova' });
+  assert.ok(!cedo.includes('REVISÕES DESTA SEMANA'), 'antes de vencer, a revisão não aparece');
 });

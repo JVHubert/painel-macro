@@ -112,6 +112,79 @@ export function textoDaCorrecao({ certo, gabarito, dica } = {}) {
   return certo ? `certo (gabarito ${numero})` : `errado — gabarito ${numero}${dica ? `. Dica: ${dica}` : ''}`;
 }
 
+// Revisão espaçada (9.3): a pergunta que você errou volta. Só entram as respostas que já têm
+// resultado — sem `corrigido`, a resposta está pendente, não errada.
+export const DIAS_DE_REVISAO = { errado: 7, parcial: 21, certo: 56 };
+export const MAXIMO_DE_REVISOES = 2;
+
+const somarDias = (dataIso, dias) =>
+  new Date(Date.parse(`${dataIso}T00:00:00Z`) + dias * 86400000).toISOString().slice(0, 10);
+
+const MOTIVO_DA_REVISAO = {
+  errado: 'você errou',
+  parcial: 'ficou pela metade',
+  certo: 'você acertou, mas ainda vale confirmar',
+};
+
+// O que já aconteceu com cada pergunta, na ordem em que você respondeu (a mais nova no fim).
+export function historicoDeEstudo(entradas = []) {
+  const porPergunta = new Map();
+  for (const entrada of entradas) {
+    const pergunta = String(entrada?.campos?.pergunta ?? '').trim();
+    if (!pergunta) continue;
+    const item = porPergunta.get(pergunta) ?? {
+      pergunta,
+      resultados: [],
+      datas: [],
+      ultimaData: null,
+      gabarito: null,
+    };
+    if (entrada.data) item.datas.push(entrada.data);
+    // "certo — conta redonda" vira "certo": o comentário depois do travessão não conta.
+    const resultado = String(entrada?.campos?.corrigido ?? '').split('—')[0].trim().toLowerCase();
+    if (resultado) {
+      item.resultados.push(resultado);
+      item.ultimaData = entrada.data ?? item.ultimaData;
+    }
+    const gabarito = lerNumeroBr(entrada?.campos?.gabarito ?? '');
+    if (gabarito !== null) item.gabarito = gabarito;
+    porPergunta.set(pergunta, item);
+  }
+  return [...porPergunta.values()];
+}
+
+// As revisões vencidas até hoje, as mais antigas primeiro, no máximo duas por semana (9.3).
+export function revisoesDaSemana(historico = [], hoje = null) {
+  const vencidas = [];
+  for (const item of historico) {
+    const resultado = item.resultados.at(-1);
+    if (!resultado || !item.ultimaData) continue;
+
+    // Duas certas seguidas: a pergunta se aposenta e sai da fila.
+    let certasSeguidas = 0;
+    for (let i = item.resultados.length - 1; i >= 0 && item.resultados[i] === 'certo'; i -= 1) {
+      certasSeguidas += 1;
+    }
+    if (certasSeguidas >= 2) continue;
+
+    const dias = DIAS_DE_REVISAO[resultado] ?? DIAS_DE_REVISAO.errado;
+    const voltaEm = somarDias(item.ultimaData, dias);
+    if (hoje && voltaEm > hoje) continue;
+    // Respondeu de novo depois do vencimento: a revisão já está feita (ou esperando correção).
+    if (item.datas.some((data) => data > voltaEm)) continue;
+    vencidas.push({ ...item, resultado, voltaEm, certasSeguidas });
+  }
+  return vencidas
+    .sort((a, b) => (a.voltaEm < b.voltaEm ? -1 : a.voltaEm > b.voltaEm ? 1 : 0))
+    .slice(0, MAXIMO_DE_REVISOES);
+}
+
+// Quantas revisões já entraram no arquivo nesta semana (o limite é por semana, não por chamada).
+export function revisoesFeitas(entradas = [], numeroSemana) {
+  const marca = `${numeroSemana} · revisão`;
+  return entradas.filter((entrada) => String(entrada?.titulo ?? '').startsWith(marca)).length;
+}
+
 // Reescreve campos de um bloco que já existe, sem tocar no resto do arquivo.
 // Campo que não estava lá entra no fim do bloco. Devolve null quando o bloco não existe.
 export function definirCampos(texto, { titulo, campos = {}, ordem = [] } = {}) {
@@ -235,13 +308,29 @@ export function painelDoEstudo({ texto, hoje, numeroSemana, pergunta }) {
   const linhas = [
     `TRILHA DE ESTUDO — semana ${numeroSemana}`,
     `\nPergunta desta semana:\n${pergunta}`,
-    '\nResponda com o PROMPT.md aberto e registre: npm run estudo -- novo',
+    '\nResponda com o PROMPT.md aberto e registre: npm run estudo -- responder <a sua resposta>',
   ];
 
   if (semResposta.length) {
     linhas.push('\nESPERANDO SUA RESPOSTA');
     for (const { entrada } of semResposta) linhas.push(`- semana ${entrada.titulo}`);
   }
+
+  // A matéria que volta: pergunta errada aparece de novo depois de um tempo (9.3).
+  const feitasNestaSemana = revisoesFeitas(entradas, numeroSemana);
+  const vencidas = revisoesDaSemana(historicoDeEstudo(entradas), hoje);
+  const revisoes = vencidas.slice(0, Math.max(0, MAXIMO_DE_REVISOES - feitasNestaSemana));
+  if (revisoes.length) {
+    linhas.push('\nREVISÕES DESTA SEMANA (a matéria que volta)');
+    for (const revisao of revisoes) {
+      linhas.push(`- ${revisao.pergunta}`);
+      linhas.push(`  ${MOTIVO_DA_REVISAO[revisao.resultado] ?? 'revisão'} em ${formatarData(revisao.ultimaData)}`);
+    }
+    linhas.push('responda uma de cada vez: npm run estudo -- revisar <a sua resposta>');
+  } else if (vencidas.length) {
+    linhas.push(`\nVocê já fez as ${MAXIMO_DE_REVISOES} revisões desta semana.`);
+  }
+
   if (respondidas.length) {
     linhas.push('\nJÁ RESPONDIDAS');
     for (const { entrada } of respondidas.slice(-6)) {

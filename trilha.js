@@ -103,6 +103,17 @@ export function ehPerguntaDeSimulacao(pergunta) {
   return PALAVRAS_DO_SIMULADOR.some((palavra) => String(pergunta.texto ?? '').includes(palavra));
 }
 
+// A resposta guardada traz o texto da pergunta, não o id: é assim que a revisão reencontra
+// a pergunta na trilha (com o tipo, o gabarito e a dica dela).
+export function perguntaPorTexto(texto) {
+  const procurado = String(texto ?? '').trim();
+  for (const nivel of TRILHA) {
+    const achada = nivel.perguntas.find((pergunta) => pergunta.texto.trim() === procurado);
+    if (achada) return achada;
+  }
+  return null;
+}
+
 // Uma pergunta por semana, na ordem, a partir do início da trilha; esgotou, volta à primeira.
 export function perguntaDaSemana(
   dataIso,

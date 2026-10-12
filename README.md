@@ -178,6 +178,7 @@ O comando cria um bloco em `diario/decisoes.md` (arquivo fora do git) e você pr
 ```powershell
 npm run estudo -- novo                  # cria o bloco desta semana com a pergunta
 npm run estudo -- responder 1126,83     # registra a resposta e corrige na hora
+npm run estudo -- revisar 7,3           # responde a revisão mais antiga que venceu
 npm run estudo
 ```
 
@@ -190,6 +191,18 @@ Nas perguntas de conta o sistema confere sozinho (`responder` aceita `1126,83` o
 com ou sem `R$`) e guarda o gabarito no bloco, com 1% de tolerância: "certo (gabarito …)" ou
 "errado — gabarito …. Dica: …". Nas de conceito, quem corrige é o professor, e você escreve o
 resultado em `corrigido:`.
+
+**A matéria volta.** A pergunta que você errou reaparece depois de um tempo — no máximo duas por
+semana, as mais antigas primeiro:
+
+| Último resultado | Volta em |
+|---|---|
+| errado | 1 semana |
+| parcial | 3 semanas |
+| certo | 8 semanas (duas certas seguidas e a pergunta aposenta) |
+
+As revisões aparecem no `npm run estudo` com o motivo, e você responde com
+`npm run estudo -- revisar <a sua resposta>` — que usa o mesmo gabarito guardado da primeira vez.
 
 Ordem sugerida para os primeiros blocos (um por semana, no ritmo da pergunta que chega):
 
