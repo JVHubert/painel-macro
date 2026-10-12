@@ -13,6 +13,7 @@ import {
   formatarPercentual,
   hojeEmBrasilia,
   juroReal,
+  mesclarComAnterior,
   montarIndicadores,
   mudancas,
   paraNumero,
@@ -249,4 +250,40 @@ test('IPCA em 12 meses exige 12 meses de dados', () => {
   const ipca = painel.indicadores.find((c) => c.id === 'ipca');
   assert.equal(ipca.valor, null);
   assert.equal(ipca.extra.percentual, 0.004);
+});
+
+test('série vazia derruba só o cartão dela', () => {
+  const painel = montarIndicadores({ metaSelic: [], cdiDiaria: BRUTO.cdiDiaria });
+  const valor = (id) => painel.indicadores.find((c) => c.id === id).valor;
+  assert.equal(valor('meta-selic'), null);
+  assert.ok(valor('cdi') > 0);
+});
+
+test('mesclarComAnterior devolve o cartão anterior quando o novo vem vazio', () => {
+  const anterior = {
+    atualizadoEm: '2026-10-11T05:00:00.000Z',
+    indicadores: [
+      { id: 'meta-selic', nome: 'Meta Selic', valor: 13.75 },
+      { id: 'dolar', nome: 'Dólar', valor: 4.98 },
+    ],
+  };
+  const novo = {
+    atualizadoEm: '2026-10-12T05:00:00.000Z',
+    indicadores: [
+      { id: 'meta-selic', nome: 'Meta Selic', valor: null },
+      { id: 'dolar', nome: 'Dólar', valor: 5.1 },
+    ],
+  };
+  const { painel, mantidos } = mesclarComAnterior(novo, anterior);
+  assert.deepEqual(mantidos, ['Meta Selic']);
+  assert.equal(painel.indicadores[0].valor, 13.75);
+  assert.equal(painel.indicadores[1].valor, 5.1);
+  assert.equal(painel.atualizadoEm, '2026-10-12T05:00:00.000Z');
+});
+
+test('mesclarComAnterior sem anterior não inventa valor', () => {
+  const novo = { indicadores: [{ id: 'cdi', nome: 'CDI', valor: null }] };
+  const { painel, mantidos } = mesclarComAnterior(novo, null);
+  assert.deepEqual(mantidos, []);
+  assert.equal(painel.indicadores[0].valor, null);
 });

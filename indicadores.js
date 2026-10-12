@@ -275,6 +275,22 @@ export function montarIndicadores(bruto = {}, { hoje = hojeEmBrasilia(), atualiz
   };
 }
 
+// Série que voltou vazia não pode apagar um dado bom: mantém o cartão anterior e diz quais foram.
+export function mesclarComAnterior(novo, anterior) {
+  const antigos = anterior?.indicadores ?? [];
+  const mantidos = [];
+  const indicadores = (novo?.indicadores ?? []).map((cartao) => {
+    const antigo = antigos.find((candidato) => candidato.id === cartao.id);
+    const antigoTemValor = antigo && antigo.valor !== null && antigo.valor !== undefined;
+    if (cartao.valor === null && antigoTemValor) {
+      mantidos.push(cartao.nome);
+      return antigo;
+    }
+    return cartao;
+  });
+  return { painel: { ...novo, indicadores }, mantidos };
+}
+
 // Quanto o CDI rendeu de uma data até o fim da série (fração).
 export function acumuladoDesde(serie, dataIso) {
   return acumular(filtrarDesde(serie, dataIso));

@@ -1,7 +1,8 @@
 // Busca os indicadores nas APIs públicas e grava dados/indicadores.json.
 // Roda na mão (npm run coletar) e todo dia no GitHub Actions.
-import { mkdir, writeFile } from 'node:fs/promises';
-import { montarIndicadores, paraSerie, urlSgs, SERIES } from '../indicadores.js';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mesclarComAnterior, montarIndicadores, paraSerie, urlSgs, SERIES } from '../indicadores.js';
+import { buscarJson } from './mercado.mjs';
 
 const DOLAR_AGORA = 'https://economia.awesomeapi.com.br/json/last/USD-BRL';
 const SAIDA = new URL('../dados/indicadores.json', import.meta.url);
@@ -20,12 +21,13 @@ function inicio(meses) {
   return dataBr(new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth() - meses, 1)));
 }
 
-async function buscarJson(url) {
-  const resposta = await fetch(url, { headers: { accept: 'application/json' } });
-  // O Banco Central responde 404 quando não há dado no período (série mensal recente, por exemplo).
-  if (resposta.status === 404) return [];
-  if (!resposta.ok) throw new Error(`${resposta.status} ${resposta.statusText} em ${url}`);
-  return resposta.json();
+// O JSON que já está no repositório é a rede de segurança de hoje: série vazia não apaga dado bom.
+async function lerAnterior() {
+  try {
+    return JSON.parse(await readFile(SAIDA, 'utf8'));
+  } catch {
+    return null;
+  }
 }
 
 async function coletar() {
@@ -45,7 +47,15 @@ async function coletar() {
     console.warn(`aviso: dólar ao vivo indisponível (${erro.message})`);
   }
 
-  const painel = montarIndicadores(bruto);
+  const novo = montarIndicadores(bruto);
+  if (novo.indicadores.every((cartao) => cartao.valor === null)) {
+    console.error('::error::nenhum indicador veio hoje — o painel não foi atualizado');
+    process.exit(1);
+  }
+
+  const { painel, mantidos } = mesclarComAnterior(novo, await lerAnterior());
+  for (const nome of mantidos) console.log(`::warning::${nome} não veio hoje — mantive o valor anterior`);
+
   for (const cartao of painel.indicadores) {
     console.log(`${cartao.nome}: ${cartao.valor ?? 'sem dado'}`);
   }
