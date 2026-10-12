@@ -5,7 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
 import { montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
-import { lerEntradas, situacao } from '../caderno.js';
+import { lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
 import { lerJson, lerTexto } from './arquivos.mjs';
 import { renderizar } from './imagem.mjs';
 import { cotacao, serieCdi } from './mercado.mjs';
@@ -37,6 +37,8 @@ function resumoDoCaderno(hoje, textoDoDiario, textoDoEstudo) {
     decisoesVencidas: decisoes.filter((entrada) => situacao(entrada, hoje).vencida).length,
     decisoesSemTese: decisoes.filter((entrada) => !entrada.campos.tese).length,
     respostaDaSemanaVazia: Boolean(daSemana && !daSemana.campos.resposta),
+    // O placar só entra no relatório quando existe caderno: no GitHub esses arquivos não existem.
+    placar: decisoes.length || respostas.length ? placar(historicoDeEstudo(respostas), decisoes, hoje) : null,
   };
 }
 

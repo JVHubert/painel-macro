@@ -16,6 +16,7 @@ import {
   lerNumeroBr,
   painelDoDiario,
   painelDoEstudo,
+  placar,
   revisoesDaSemana,
   situacao,
   textoDaCorrecao,
@@ -296,4 +297,51 @@ test('o painel do estudo mostra as revisões que venceram', () => {
 
   const cedo = painelDoEstudo({ texto, hoje: '2026-01-05', numeroSemana: 2, pergunta: 'Pergunta nova' });
   assert.ok(!cedo.includes('REVISÕES DESTA SEMANA'), 'antes de vencer, a revisão não aparece');
+});
+
+test('o placar conta só as últimas 8 semanas de estudo', () => {
+  const item = (pergunta, data, resultados, gabarito) => ({
+    pergunta,
+    resultados,
+    datas: [data],
+    ultimaData: data,
+    gabarito,
+  });
+  const historico = [
+    item('conta de janeiro', '2026-01-01', ['certo'], 10), // saiu da janela de 8 semanas
+    item('conta 1', '2026-03-01', ['certo'], 10),
+    item('conta 2', '2026-03-05', ['errado'], 10),
+    item('conceito', '2026-03-05', ['certo'], null), // conceito não entra no placar
+  ];
+  const diario = lerEntradas(
+    [
+      '## 2026-03-01 · Comprar XPTO3',
+      '- tipo: compra',
+      '- tese: porque o preço estava baixo',
+      '- revisado: deu certo',
+      '',
+      '## 2026-03-08 · Aportar',
+      '- tipo: aporte',
+      '- tese:',
+      '- revisado:',
+    ].join('\n'),
+  );
+
+  const resultado = placar(historico, diario, '2026-03-20');
+  assert.equal(resultado.nivel, 1);
+  assert.equal(resultado.contas, 2);
+  assert.equal(resultado.certas, 1);
+  assert.equal(resultado.percentual, 50);
+  assert.equal(resultado.comTese, 1);
+  assert.equal(resultado.revisadas, 1);
+  assert.equal(resultado.linha, 'Nível 1 · contas certas 1/2 (50%) · decisões com tese 1 · revisadas 1');
+});
+
+test('sem contas respondidas o placar diz isso em vez de 0%', () => {
+  const resultado = placar([], [], '2026-03-20');
+  assert.equal(resultado.percentual, null);
+  assert.equal(
+    resultado.linha,
+    'Nível 1 · nenhuma conta respondida ainda · decisões com tese 0 · revisadas 0',
+  );
 });

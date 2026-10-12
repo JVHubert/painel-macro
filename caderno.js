@@ -13,6 +13,7 @@
 // Este módulo só lê, escreve e formata — sem rede e sem disco, testável com `node --test`.
 import { deslocarDias, tabela } from './relatorio.js';
 import { formatarData, formatarNumero, formatarPercentual, nivelDeResultado } from './indicadores.js';
+import { TRILHA } from './trilha.js';
 
 export const CAMPOS_DECISAO = ['tipo', 'valor', 'tese', 'espero', 'provacao', 'revisarEm', 'revisado'];
 export const CAMPOS_RESPOSTA = ['pergunta', 'resposta', 'gabarito', 'corrigido'];
@@ -185,6 +186,39 @@ export function revisoesFeitas(entradas = [], numeroSemana) {
   return entradas.filter((entrada) => String(entrada?.titulo ?? '').startsWith(marca)).length;
 }
 
+// Placar de aprendizado (9.4): uma linha só. O estudo conta as últimas 8 semanas; o diário entra
+// inteiro, porque é ele que a formatura cobra (10 decisões com tese, 5 revisadas — seção 7).
+// O nível é o último escrito na trilha, que é o que existe enquanto só o Nível 1 está montado.
+export const SEMANAS_DO_PLACAR = 8;
+
+export function placar(historicoEstudo = [], entradasDiario = [], hoje = null) {
+  const limite = hoje ? somarDias(hoje, -7 * SEMANAS_DO_PLACAR) : null;
+  // Só contas têm gabarito guardado: conceito e pessoal não entram no placar.
+  const contas = historicoEstudo.filter(
+    (item) => item.gabarito !== null && item.ultimaData && (!limite || item.ultimaData >= limite),
+  );
+  const certas = contas.filter((item) => item.resultados.at(-1) === 'certo').length;
+
+  const comTese = entradasDiario.filter((entrada) => String(entrada?.campos?.tese ?? '').trim()).length;
+  const revisadas = entradasDiario.filter((entrada) => String(entrada?.campos?.revisado ?? '').trim()).length;
+  const nivel = TRILHA.at(-1)?.nivel ?? 1;
+
+  return {
+    nivel,
+    certas,
+    contas: contas.length,
+    percentual: contas.length ? Math.round((certas / contas.length) * 100) : null,
+    comTese,
+    revisadas,
+    linha: [
+      `Nível ${nivel}`,
+      contas.length ? `contas certas ${certas}/${contas.length} (${Math.round((certas / contas.length) * 100)}%)` : 'nenhuma conta respondida ainda',
+      `decisões com tese ${comTese}`,
+      `revisadas ${revisadas}`,
+    ].join(' · '),
+  };
+}
+
 // Reescreve campos de um bloco que já existe, sem tocar no resto do arquivo.
 // Campo que não estava lá entra no fim do bloco. Devolve null quando o bloco não existe.
 export function definirCampos(texto, { titulo, campos = {}, ordem = [] } = {}) {
@@ -296,7 +330,7 @@ export function painelDoDiario({ texto, hoje, fatos = {} }) {
   return linhas.join('\n');
 }
 
-export function painelDoEstudo({ texto, hoje, numeroSemana, pergunta }) {
+export function painelDoEstudo({ texto, hoje, numeroSemana, pergunta, textoDoDiario = '' }) {
   const entradas = lerEntradas(texto);
   const situacoes = entradas.map((entrada) => ({
     entrada,
@@ -339,8 +373,9 @@ export function painelDoEstudo({ texto, hoje, numeroSemana, pergunta }) {
   }
 
   const aproveitamento = entradas.length ? Math.round((respondidas.length / entradas.length) * 100) : 0;
+  const estudo = placar(historicoDeEstudo(entradas), lerEntradas(textoDoDiario), hoje);
   linhas.push(
-    `\nPLACAR\n${tabela(
+    `\nPLACAR\n${estudo.linha}\n\n${tabela(
       [
         ['semanas registradas', String(entradas.length)],
         ['respondidas', String(respondidas.length)],

@@ -123,3 +123,13 @@ test('reserva muito acima da meta fica cinza e cobra a decisão', () => {
   assert.match(html, /class="dir neutro">10,0 meses de custo \(meta 6\)/);
   assert.match(html, /R\$ 16\.000,00 acima da meta de 6 meses — dinheiro que pode ir para prazo maior\./);
 });
+
+test('o placar do estudo aparece abaixo do Para esta semana, quando existe caderno', () => {
+  const placar = { linha: 'Nível 1 · contas certas 1/2 (50%) · decisões com tese 1 · revisadas 0' };
+
+  const comPlacar = montar({ caderno: { placar } });
+  assert.match(comPlacar, /Para esta semana[\s\S]*<p class="item placar">Nível 1 · contas certas 1\/2 \(50%\)[\s\S]*Patrimônio/);
+
+  const semCaderno = montar();
+  assert.ok(!semCaderno.includes('class="item placar"'), 'sem caderno, o placar não aparece');
+});

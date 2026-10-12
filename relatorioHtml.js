@@ -81,6 +81,7 @@ tr.totais td { border-top: 1px solid var(--linha); padding-top: 9px; font-weight
 .nota { color: var(--apagado); font-size: 13px; margin-top: 10px; }
 .pergunta { font-size: 17px; line-height: 1.45; }
 .item { margin-top: 6px; }
+.placar { color: var(--apagado); font-size: 14px; }
 header .resumo { color: var(--texto); font-size: 16px; margin-top: 8px; }
 .barra { display: flex; height: 20px; margin-top: 10px; border-radius: 6px; overflow: hidden; background: var(--linha); }
 .barra .parte { height: 100%; }
@@ -119,7 +120,10 @@ function macroHtml(painel) {
 function paraEstaSemanaHtml(dados) {
   const { itens, pergunta } = paraEstaSemana(dados);
   const lista = itens.map((item) => `<p class="item">${item}</p>`).join('');
-  return secao('Para esta semana', `${lista}<p class="pergunta">${pergunta}</p>`);
+  const placar = dados.caderno?.placar?.linha
+    ? `<p class="item placar">${dados.caderno.placar.linha}</p>`
+    : '';
+  return secao('Para esta semana', `${lista}<p class="pergunta">${pergunta}</p>${placar}`);
 }
 
 function patrimonioHtml(dados) {

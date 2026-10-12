@@ -432,3 +432,25 @@ test('relatório sem posições diz que a carteira está vazia', () => {
   assert.match(texto, /nenhuma posição em carteira\.json/);
   assert.ok(!texto.includes('SOBRA DO MÊS'));
 });
+
+test('o placar do estudo aparece abaixo do Para esta semana', () => {
+  const dados = {
+    data: '2026-10-11',
+    painel: PAINEL,
+    posicoes: [],
+    reserva: { alvoMeses: 6, detalhe: [{ nome: 'Caixinha X', saldo: 6000 }] },
+    custoMensal: 1000,
+  };
+
+  const comPlacar = montarRelatorio({
+    ...dados,
+    caderno: { placar: { linha: 'Nível 1 · contas certas 1/2 (50%) · decisões com tese 1 · revisadas 0' } },
+  });
+  assert.match(
+    comPlacar,
+    /PARA ESTA SEMANA[\s\S]*\nNível 1 · contas certas 1\/2 \(50%\) · decisões com tese 1 · revisadas 0\n\nPATRIMÔNIO/,
+  );
+
+  const semCaderno = montarRelatorio(dados);
+  assert.ok(!semCaderno.includes('Nível 1 ·'), 'sem caderno, o placar não entra no relatório');
+});

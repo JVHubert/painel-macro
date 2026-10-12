@@ -499,6 +499,7 @@ export function montarRelatorio(dados = {}) {
   const semana = paraEstaSemana(dados);
   const itensDaSemana = semana.itens.map((item, i) => `${i + 1}. ${item}`);
   itensDaSemana.push(`Pergunta da semana: ${semana.pergunta}`);
+  if (dados.caderno?.placar?.linha) itensDaSemana.push(dados.caderno.placar.linha);
   blocos.push(`PARA ESTA SEMANA\n${itensDaSemana.join('\n')}`);
 
   const { total, partes } = alocacao(dados);

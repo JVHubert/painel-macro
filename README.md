@@ -62,7 +62,7 @@ No simulador, o campo **% do CDI** (padrão 100) mostra um CDB que paga mais ou 
 Todo domingo às 18h (Brasília) o workflow "Relatório semanal" monta e **envia uma imagem** no Telegram, com tabelas e cores de verdade:
 
 - **Frase-resumo** no topo — o que a semana fez com o patrimônio e onde a reserva está.
-- **Para esta semana** — até 3 ações decididas por regras (excedente da reserva, produto rendendo pouco, diário e estudo) e a pergunta do estudo.
+- **Para esta semana** — até 3 ações decididas por regras (excedente da reserva, produto rendendo pouco, diário e estudo), a pergunta do estudo e o placar do aprendizado (contas certas das últimas 8 semanas, decisões com tese, revisadas).
 - **Patrimônio** — total, variação estimada da semana e a barra de alocação (reserva × ações).
 - **Reserva** — uma tabela só: onde está, saldo, o que rende e quanto isso é do CDI.
 - **Carteira** — uma linha por papel (aplicado, hoje, resultado, % do patrimônio) e quanto o mesmo dinheiro teria rendido no CDI.
@@ -203,6 +203,11 @@ semana, as mais antigas primeiro:
 
 As revisões aparecem no `npm run estudo` com o motivo, e você responde com
 `npm run estudo -- revisar <a sua resposta>` — que usa o mesmo gabarito guardado da primeira vez.
+
+O **placar** fecha o quadro nos dois lugares: no `npm run estudo` e numa linha do relatório de
+domingo, abaixo do "Para esta semana". Ele conta só as contas das últimas 8 semanas
+(`contas certas 6/8 (75%)`) e soma o diário inteiro (`decisões com tese 2 · revisadas 1`) — é o
+que a formatura cobra.
 
 Ordem sugerida para os primeiros blocos (um por semana, no ritmo da pergunta que chega):
 
