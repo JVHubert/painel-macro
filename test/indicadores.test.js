@@ -11,6 +11,7 @@ import {
   filtrarDesde,
   formatarNumero,
   formatarPercentual,
+  hojeEmBrasilia,
   juroReal,
   montarIndicadores,
   mudancas,
@@ -33,6 +34,13 @@ test('podeMostrarDetalhe esconde o detalhe no GitHub Actions', () => {
   assert.equal(podeMostrarDetalhe({}), true);
   assert.equal(podeMostrarDetalhe({ GITHUB_ACTIONS: 'false' }), true);
   assert.equal(podeMostrarDetalhe({ GITHUB_ACTIONS: 'true' }), false);
+});
+
+test('hojeEmBrasilia usa o dia de Brasília, não o UTC', () => {
+  // 23h30 do dia 11 em Brasília já é dia 12 em UTC — o dia tem que continuar sendo 11.
+  assert.equal(hojeEmBrasilia(new Date('2026-10-12T02:30:00Z')), '2026-10-11');
+  assert.equal(hojeEmBrasilia(new Date('2026-10-11T15:00:00Z')), '2026-10-11');
+  assert.equal(hojeEmBrasilia(new Date('2026-10-12T04:00:00Z')), '2026-10-12');
 });
 
 test('converte as respostas do Banco Central', () => {

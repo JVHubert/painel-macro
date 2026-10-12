@@ -2,7 +2,7 @@
 // Uso: npm run relatorio           (envia pelo canal configurado e salva em relatorios/)
 //      npm run relatorio -- --seco (monta e salva, mas não envia nada)
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { acumuladoDesde, compararComCdi, formatarData, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
+import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
 import { deslocarDias, montarRelatorio, resumoMacro, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { renderizar } from './imagem.mjs';
@@ -12,7 +12,7 @@ import { enviarFoto, enviarSemDerrubar } from './notificar.mjs';
 const DADOS = new URL('../dados/indicadores.json', import.meta.url);
 const CARTEIRA = new URL('../carteira.json', import.meta.url);
 const PASTA = new URL('../relatorios/', import.meta.url);
-const HOJE = new Date().toISOString().slice(0, 10);
+const HOJE = hojeEmBrasilia();
 // `--seco` monta e salva o relatório sem enviar (para conferir a imagem antes de publicar).
 const SECO = process.argv.includes('--seco');
 // Em log público (GitHub Actions) não aparece nome nem valor do JV; na máquina dele, aparece tudo.

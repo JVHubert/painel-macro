@@ -4,11 +4,12 @@
 //   npm run estudo -- novo → cria o bloco desta semana para você responder
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { CAMPOS_RESPOSTA, adicionarBloco, criarBloco, lerEntradas, painelDoEstudo } from '../caderno.js';
+import { hojeEmBrasilia } from '../indicadores.js';
 import { numeroDaSemana, perguntaDaSemana } from '../relatorio.js';
 
 const ARQUIVO = new URL('../estudo/respostas.md', import.meta.url);
 const PASTA = new URL('../estudo/', import.meta.url);
-const HOJE = new Date().toISOString().slice(0, 10);
+const HOJE = hojeEmBrasilia();
 const SEMANA = String(numeroDaSemana(HOJE));
 const PERGUNTA = perguntaDaSemana(HOJE);
 

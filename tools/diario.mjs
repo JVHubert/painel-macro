@@ -3,7 +3,7 @@
 //   npm run diario                  → painel (o que falta preencher e o que venceu)
 //   npm run diario -- novo "texto"  → cria o esqueleto de uma decisão nova
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { acumuladoDesde } from '../indicadores.js';
+import { acumuladoDesde, hojeEmBrasilia } from '../indicadores.js';
 import {
   CAMPOS_DECISAO,
   adicionarBloco,
@@ -17,7 +17,7 @@ import { serieCdi, variacaoDesde } from './mercado.mjs';
 
 const ARQUIVO = new URL('../diario/decisoes.md', import.meta.url);
 const PASTA = new URL('../diario/', import.meta.url);
-const HOJE = new Date().toISOString().slice(0, 10);
+const HOJE = hojeEmBrasilia();
 const EXEMPLO = 'diario/decisoes.example.md';
 
 async function ler() {

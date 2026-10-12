@@ -42,6 +42,11 @@ export function deslocarMeses(dataIso, meses) {
   return `${base.getUTCFullYear()}-${mm}-${String(novoDia).padStart(2, '0')}`;
 }
 
+// Data de hoje no fuso de Brasília: em UTC, depois das 21h, ela já virou o dia seguinte.
+export function hojeEmBrasilia(agora = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(agora);
+}
+
 export function filtrarDesde(serie, dataIso) {
   return serie.filter((ponto) => ponto.data >= dataIso);
 }
