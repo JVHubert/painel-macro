@@ -1,5 +1,6 @@
 // Monta o relatório semanal: macro do painel + cotação das posições + reserva + pergunta da semana.
-// Uso: npm run relatorio   (envia pelo canal configurado e salva em relatorios/)
+// Uso: npm run relatorio           (envia pelo canal configurado e salva em relatorios/)
+//      npm run relatorio -- --seco (monta e salva, mas não envia nada)
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, compararComCdi, formatarData, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
 import { deslocarDias, montarRelatorio, resumoMacro, resumoPosicao } from '../relatorio.js';
@@ -12,6 +13,8 @@ const DADOS = new URL('../dados/indicadores.json', import.meta.url);
 const CARTEIRA = new URL('../carteira.json', import.meta.url);
 const PASTA = new URL('../relatorios/', import.meta.url);
 const HOJE = new Date().toISOString().slice(0, 10);
+// `--seco` monta e salva o relatório sem enviar (para conferir a imagem antes de publicar).
+const SECO = process.argv.includes('--seco');
 // Em log público (GitHub Actions) não aparece nome nem valor do JV; na máquina dele, aparece tudo.
 const MOSTRAR_DETALHE = podeMostrarDetalhe(process.env);
 
@@ -126,11 +129,17 @@ let enviado = null;
 try {
   const png = await renderizar(montarHtml(dadosComuns));
   await writeFile(new URL(`${HOJE}.png`, PASTA), png);
-  enviado = await enviarFoto(png, { legenda: `📊 Relatório semanal — ${formatarData(HOJE)}` });
   console.log(`imagem salva em relatorios/${HOJE}.png (${Math.round(png.length / 1024)} KB)`);
-  if (enviado) console.log(`imagem enviada por ${enviado.canal}`);
+  if (!SECO) {
+    enviado = await enviarFoto(png, { legenda: `📊 Relatório semanal — ${formatarData(HOJE)}` });
+    if (enviado) console.log(`imagem enviada por ${enviado.canal}`);
+  }
 } catch (erro) {
-  console.log(`::warning::a imagem não saiu (${erro.message}) — vou mandar em texto`);
+  console.log(`::warning::a imagem não saiu (${erro.message})${SECO ? '' : ' — vou mandar em texto'}`);
 }
 
-if (!enviado) await enviarSemDerrubar(texto, { titulo: 'Painel macro - relatorio semanal' });
+if (SECO) {
+  console.log('modo seco: nada enviado');
+} else if (!enviado) {
+  await enviarSemDerrubar(texto, { titulo: 'Painel macro - relatorio semanal' });
+}

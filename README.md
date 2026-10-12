@@ -61,6 +61,8 @@ Todo domingo às 18h (Brasília) o workflow "Relatório semanal" monta e **envia
 
 Tudo fica arquivado em `relatorios/AAAA-MM-DD.png` (e `.md`, em texto) na sua máquina — nada disso vai para o GitHub. A sua cópia de segurança do histórico é o próprio Telegram.
 
+Para conferir o relatório **sem que ele seja enviado** (por exemplo, depois de mexer no layout), rode `npm run relatorio -- --seco`: ele monta tudo, grava o `.md` e o `.png` em `relatorios/` e termina com `modo seco: nada enviado`.
+
 ### Cores (formatação condicional)
 
 A imagem sai com **cor de verdade** (azul, verde, cinza, mostarda e vermelho) e colunas alinhadas. A faixa é sobre o número, não juízo de valor:
@@ -211,6 +213,7 @@ npm install       # só para o render da imagem (puppeteer-core usa o seu Chrome
 npm test          # contas de juros, imposto, formatação, relatório e HTML
 npm run coletar   # busca as APIs e regrava dados/indicadores.json
 npm run relatorio # monta o relatório, salva em relatorios/ e envia (imagem, senão texto)
+npm run relatorio -- --seco # igual, mas monta e salva sem enviar nada (para conferir)
 npm run diario    # diário de decisões: o que falta escrever e o que venceu
 npm run estudo    # pergunta da semana, respostas e aproveitamento
 npm run chat-id   # descobre o seu chat_id do Telegram (para o .env.local)
