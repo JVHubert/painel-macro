@@ -103,6 +103,8 @@ test('números do relatório aparecem formatados', () => {
   assert.match(html, /R\$ 850,00/);
   assert.match(html, /Se o mesmo dinheiro tivesse ficado no CDI: R\$ 850,00 \(hoje: R\$ 630,00\)/);
   assert.ok(!html.includes('<td>soma</td>'), 'a tabela do CDI não mistura R$ com %');
+  assert.match(html, /só preço; não inclui dividendos nem imposto/);
+  assert.ok(!/class="dir (bom|ruim|neutro)">-0,45%/.test(html), 'o câmbio da semana não recebe cor');
   assert.match(html, /−45,0 p\.p\./);
   assert.match(html, /R\$ 17\.000,00/);
   assert.match(html, /4,3 meses de custo \(meta 6\)/);
@@ -118,4 +120,10 @@ test('sem dado o html não quebra e vira pendência', () => {
   assert.match(html, /sem dado para calcular/);
   assert.match(html, /preencha o precoMedio de RENT3/);
   assert.ok(!html.includes('NaN') && !html.includes('undefined'));
+});
+
+test('reserva muito acima da meta fica cinza e cobra a decisão', () => {
+  const html = montar({ reserva: { alvoMeses: 6, detalhe: [{ nome: 'Caixinha X', saldo: 40000 }] } });
+  assert.match(html, /class="dir neutro">10,0 meses de custo \(meta 6\)/);
+  assert.match(html, /R\$ 16\.000,00 acima da meta de 6 meses — dinheiro que pode ir para prazo maior\./);
 });

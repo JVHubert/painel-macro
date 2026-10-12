@@ -7,6 +7,7 @@ import {
   juntarPendencias,
   nivelDaReserva,
   nivelDoCdi,
+  notaDoExcedente,
   numeroDaSemana,
   perguntaDaSemana,
   totaisDoTicker,
@@ -108,8 +109,7 @@ function tabelaSimples(linhas) {
 function macroHtml(painel) {
   const { linhas, notas } = dadosMacro(painel);
   const corpo = linhas.map(
-    (linha) =>
-      `<tr><td>${linha.nome}</td><td class="dir">${linha.valor}</td>${td(linha.semana, linha.fracao)}</tr>`,
+    (linha) => `<tr><td>${linha.nome}</td><td class="dir">${linha.valor}</td><td class="dir">${linha.semana}</td></tr>`,
   );
   return secao('Macro', `${tabelaHtml(['Indicador', 'Valor', 'Semana'], corpo)}<p class="nota">${notas.join(' · ')}</p>`);
 }
@@ -174,6 +174,7 @@ function carteiraHtml(posicoes) {
           `<p class="nota">Se o mesmo dinheiro tivesse ficado no CDI: ${reais(totais.noCdi)} (hoje: ${reais(totais.mercado)})</p>`,
         );
       }
+      partes.push('<p class="nota">só preço; não inclui dividendos nem imposto</p>');
     }
   }
   return secao('Carteira', partes.join(''));
@@ -198,6 +199,9 @@ function reservaHtml(reserva, custoMensal) {
       )} meses de custo (meta ${alvoMeses})</td></tr>`,
     ]),
   ];
+
+  const notaExcedente = notaDoExcedente({ meses, alvoMeses, atual, custo });
+  if (notaExcedente) partes.push(`<p class="nota">${notaExcedente}</p>`);
 
   if (detalhe.length) {
     partes.push(

@@ -155,7 +155,7 @@ test('macro sai em tabela alinhada', () => {
   assert.match(bloco, /CDI\s+13,65%\s+=0,00 p\.p\./);
   assert.match(bloco, /IPCA \(12m\)\s+4,58%/);
   assert.match(bloco, /Juro real\s+8,77%/);
-  assert.match(bloco, /Dólar\s+R\$ 4,9918\s+-0,45% ⚪/);
+  assert.match(bloco, /Dólar\s+R\$ 4,9918\s+-0,45%\n/); // sem emoji: câmbio não tem cor
   assert.match(bloco, /CDI acumulado em 12 meses: 14,51%/);
   assert.ok(!bloco.includes('NaN') && !bloco.includes('undefined'));
 });
@@ -222,6 +222,7 @@ test('dois lotes do mesmo papel ganham soma e o CDI de cada data', () => {
   // 200×1,50 + 500×1,10 = 850
   assert.match(texto, /Se o mesmo dinheiro tivesse ficado no CDI: R\$ 850,00 \(hoje: R\$ 630,00\)/);
   assert.ok(!/soma\s+R\$ 850,00/.test(texto), 'a tabela do CDI não mistura R$ com %');
+  assert.match(texto, /só preço; não inclui dividendos nem imposto/);
   assert.match(texto, /na semana 5,00% 🟢/);
 });
 
@@ -231,7 +232,12 @@ test('reserva calcula cobertura e usa a cor do progresso', () => {
   assert.match(vazia, /Cobertura\s+1,0 meses de custo \(meta 6\) 🟡/);
 
   const cheia = resumoReserva({ atual: 36000 }, { custoMensal: 4000 }).texto;
-  assert.match(cheia, /9,0 meses de custo \(meta 6\) 🔵/);
+  assert.match(cheia, /9,0 meses de custo \(meta 6\) ⚪/);
+  assert.match(
+    cheia,
+    /R\$ 12\.000,00 acima da meta de 6 meses — dinheiro que pode ir para prazo maior\. Registre a decisão no diário\./,
+  );
+  assert.ok(!vazia.includes('acima da meta'));
 
   const semDado = resumoReserva({}, {});
   assert.match(semDado.texto, /sem dado para calcular/);
@@ -307,8 +313,9 @@ test('legenda de cores acompanha as faixas', () => {
 });
 
 test('cor da reserva é o progresso até a meta, não rentabilidade', () => {
-  assert.equal(nivelDaReserva(14.7, 6).nome, 'muito bom');
-  assert.equal(nivelDaReserva(9, 6).nome, 'muito bom');
+  assert.equal(nivelDaReserva(14.7, 6).nome, 'neutro'); // muito acima da meta: decisão pendente, não conquista
+  assert.equal(nivelDaReserva(9, 6).nome, 'neutro'); // 1,5× a meta já é excedente
+  assert.equal(nivelDaReserva(8.9, 6).nome, 'bom');
   assert.equal(nivelDaReserva(6, 6).nome, 'bom');
   assert.equal(nivelDaReserva(5.9, 6).nome, 'ruim');
   assert.equal(nivelDaReserva(0.1, 6).nome, 'ruim');

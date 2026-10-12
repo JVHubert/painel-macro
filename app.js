@@ -39,8 +39,7 @@ function cartaoHtml(cartao) {
   const grafico = desenho
     ? `<svg class="grafico" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="${desenho}"/></svg>`
     : '';
-  // Variação de preço recebe cor por faixa; taxa (Selic, CDI) fica neutra de propósito.
-  const nivelVariacao = cartao.id === 'dolar' ? nivelDeResultado(cartao.variacao) : null;
+  // Macro não recebe cor: a taxa e o câmbio da semana não são bom nem ruim para quem poupa.
   return `
     <article class="cartao" data-id="${cartao.id}">
       <div class="cabecalho">
@@ -48,7 +47,7 @@ function cartaoHtml(cartao) {
         <span class="fonte">${cartao.fonte}</span>
       </div>
       <p class="valor">${numero}${unidade}</p>
-      <p class="variacao ${nivelVariacao ? `nivel-${nivelVariacao.classe}` : ''}">${linhaVariacao(cartao)}</p>
+      <p class="variacao">${linhaVariacao(cartao)}</p>
       ${grafico}
       <p class="sobre">${cartao.sobre}</p>
       <p class="referencia">${cartao.rotuloReferencia ?? 'dado de'} ${formatarData(cartao.referencia)}</p>

@@ -1,6 +1,6 @@
 // Guarda a casca do painel no aparelho e mantém o JSON de indicadores sempre fresco.
 // Aumente a versão a cada publicação para os celulares baixarem a nova.
-const VERSAO = 'painel-macro-v6';
+const VERSAO = 'painel-macro-v7';
 const ARQUIVOS = [
   './',
   'index.html',

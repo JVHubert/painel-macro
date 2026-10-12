@@ -227,6 +227,7 @@ function tabelaDoTicker(ticker, lotes, pendencias) {
         `Se o mesmo dinheiro tivesse ficado no CDI: ${reais(totais.noCdi)} (hoje: ${reais(totais.mercado)})`,
       );
     }
+    blocos.push('só preço; não inclui dividendos nem imposto');
   }
   return blocos.join('\n');
 }
@@ -282,8 +283,8 @@ export function dadosMacro(painel, { dias = 7, hoje } = {}) {
       {
         nome: 'Dólar',
         valor: semDado(dolar) ? '–' : `R$ ${formatarNumero(dolar.valor, 4)}`,
+        // Câmbio subir ou cair não é bom nem ruim para quem poupa: aqui não entra cor.
         semana: variacaoDolar === null ? '' : `${seta(variacaoDolar)}${formatarPercentual(Math.abs(variacaoDolar))}`,
-        fracao: variacaoDolar,
       },
     ],
     notas,
@@ -293,20 +294,25 @@ export function dadosMacro(painel, { dias = 7, hoje } = {}) {
 export function resumoMacro(painel, opcoes = {}) {
   const { linhas, notas } = dadosMacro(painel, opcoes);
   const corpo = [['Indicador', 'Valor', 'Semana']];
-  for (const linha of linhas) {
-    const emoji = linha.fracao === undefined ? '' : ` ${nivelDeResultado(linha.fracao)?.emoji ?? ''}`.trimEnd();
-    corpo.push([linha.nome, linha.valor, `${linha.semana}${emoji}`]);
-  }
+  for (const linha of linhas) corpo.push([linha.nome, linha.valor, linha.semana]);
   return `MACRO\n${tabela(corpo, { colunas: ['esq', 'dir', 'dir'] })}\n${notas.join(' · ')}`;
 }
 
 // A reserva não é rentabilidade: aqui a cor é o progresso até a meta de meses.
 export function nivelDaReserva(meses, alvoMeses) {
   const proporcao = alvoMeses ? meses / alvoMeses : 0;
-  if (proporcao >= 1.5) return NIVEIS[0]; // 🔵 bem acima da meta
+  if (proporcao >= 1.5) return NIVEIS[2]; // ⚪ bem acima da meta: sobra decisão pendente, não conquista
   if (proporcao >= 1) return NIVEIS[1]; // 🟢 meta batida
   if (proporcao > 0) return NIVEIS[3]; // 🟡 em construção
   return NIVEIS[4]; // 🔴 nada guardado
+}
+
+// Dinheiro parado acima da meta é decisão pendente: a frase cobra o registro no diário.
+export function notaDoExcedente({ meses, alvoMeses, atual, custo }) {
+  if (meses < alvoMeses * 1.5) return null;
+  const excedente = atual - alvoMeses * custo;
+  if (excedente <= 0) return null;
+  return `${reais(excedente)} acima da meta de ${alvoMeses} meses — dinheiro que pode ir para prazo maior. Registre a decisão no diário.`;
 }
 
 // Faixa do "% do CDI": compara com o prometido, se houver promessa.
@@ -343,6 +349,9 @@ export function resumoReserva(reserva, { custoMensal, alvoMeses = reserva?.alvoM
       { colunas: ['esq', 'dir'] },
     )}`,
   ];
+
+  const notaExcedente = notaDoExcedente({ meses, alvoMeses, atual, custo });
+  if (notaExcedente) blocos.push(notaExcedente);
 
   if (detalhe.length) {
     const saldos = [['Onde', 'Saldo']];
