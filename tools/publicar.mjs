@@ -7,7 +7,7 @@ const raiz = new URL('..', import.meta.url);
 const dist = new URL('../dist/', import.meta.url);
 const destino = new URL('../dist/site/', import.meta.url);
 
-const ARQUIVOS = ['index.html', 'style.css', 'app.js', 'indicadores.js', 'sw.js', 'manifest.webmanifest'];
+const ARQUIVOS = ['index.html', 'style.css', 'app.js', 'indicadores.js', 'trilha.js', 'sw.js', 'manifest.webmanifest'];
 const PASTAS = ['icons', 'dados'];
 
 // A casca é o que o service worker guarda no aparelho: o site publicado menos os dados (mudam

@@ -3,17 +3,28 @@ import {
   formatarData,
   formatarNumero,
   formatarPercentual,
+  hojeEmBrasilia,
   legendaNiveis,
   nivelDeResultado,
+  poupanca,
+  resumoDoPainel,
   simulacao,
 } from './indicadores.js';
+import { ehPerguntaDeSimulacao, perguntaDaSemana } from './trilha.js';
 
 const $ = (id) => document.getElementById(id);
 const listaEl = $('indicadores');
+const resumoEl = $('resumo');
 const situacaoEl = $('situacao');
 const valorEl = $('valor');
 const mesesEl = $('meses');
+const percentualCdiEl = $('percentual-cdi');
 const resultadoEl = $('resultado');
+const notaPoupancaEl = $('nota-poupanca');
+const perguntaSemanaEl = $('pergunta-semana');
+
+// A ordem da tela: o juro real primeiro, porque é o número que muda a vida de quem poupa.
+const ORDEM_DOS_CARTOES = ['juro-real', 'meta-selic', 'cdi', 'ipca', 'dolar'];
 
 let painel = null;
 
@@ -31,6 +42,7 @@ function linhaVariacao(cartao) {
   return `${seta} ${tamanho} ${cartao.rotuloVariacao}`.trim();
 }
 
+// A fonte técnica sai do topo do cartão e vai para o pé, em texto menor.
 function cartaoHtml(cartao) {
   const casas = cartao.id === 'dolar' ? 4 : 2;
   const numero = cartao.valor === null ? '–' : `${cartao.prefixoValor ?? ''}${formatarNumero(cartao.valor, casas)}`;
@@ -42,37 +54,40 @@ function cartaoHtml(cartao) {
   // Macro não recebe cor: a taxa e o câmbio da semana não são bom nem ruim para quem poupa.
   return `
     <article class="cartao" data-id="${cartao.id}">
-      <div class="cabecalho">
-        <h2>${cartao.nome}</h2>
-        <span class="fonte">${cartao.fonte}</span>
-      </div>
+      <h2>${cartao.nome}</h2>
       <p class="valor">${numero}${unidade}</p>
       <p class="variacao">${linhaVariacao(cartao)}</p>
       ${grafico}
       <p class="sobre">${cartao.sobre}</p>
       <p class="referencia">${cartao.rotuloReferencia ?? 'dado de'} ${formatarData(cartao.referencia)}</p>
+      <p class="fonte">${cartao.fonte}</p>
     </article>
   `;
 }
 
 function renderizarCartoes() {
-  listaEl.innerHTML = painel.indicadores.map(cartaoHtml).join('');
+  const posicao = (cartao) => {
+    const indice = ORDEM_DOS_CARTOES.indexOf(cartao.id);
+    return indice === -1 ? ORDEM_DOS_CARTOES.length : indice;
+  };
+  const cartoes = [...painel.indicadores].sort((a, b) => posicao(a) - posicao(b));
+  listaEl.innerHTML = cartoes.map(cartaoHtml).join('');
 }
 
 function renderizarSimulacao() {
   const cdi = buscar('cdi');
   const ipca = buscar('ipca');
+  const meta = buscar('meta-selic');
   if (!cdi?.valor || !ipca?.valor) {
     resultadoEl.innerHTML = '<p class="ajuda">Indicadores indisponíveis para simular.</p>';
+    notaPoupancaEl.textContent = '';
     return;
   }
   const valor = Number(valorEl.value) || 0;
-  const resultado = simulacao({
-    valor,
-    cdi: cdi.valor / 100,
-    ipca: ipca.valor / 100,
-    meses: Number(mesesEl.value),
-  });
+  const meses = Number(mesesEl.value);
+  const percentualDoCdi = (Number(percentualCdiEl.value) || 100) / 100;
+  const resultado = simulacao({ valor, cdi: (cdi.valor / 100) * percentualDoCdi, ipca: ipca.valor / 100, meses });
+  const naPoupanca = meta?.valor ? poupanca({ valor, meses, selic: meta.valor }) : null;
   const linhas = [
     ['Rendimento bruto', resultado.bruto, resultado.bruto / valor],
     [
@@ -84,6 +99,7 @@ function renderizarSimulacao() {
     ['Perda para a inflação', -resultado.inflacao, -resultado.inflacao / valor],
     ['Sobra de verdade (ganho real)', resultado.ganhoReal, resultado.ganhoReal / valor],
   ];
+  if (naPoupanca) linhas.push(['Na poupança seria', naPoupanca.final, null]);
   resultadoEl.innerHTML = linhas
     .map(([rotulo, numero, fracao]) => {
       const nivel = nivelDeResultado(fracao);
@@ -91,6 +107,17 @@ function renderizarSimulacao() {
       return `<dt>${rotulo}</dt><dd${classe}>${reais(numero)}</dd>`;
     })
     .join('');
+  notaPoupancaEl.textContent = naPoupanca
+    ? `Poupança: ${formatarPercentual(naPoupanca.taxaMensal, 2)} ao mês, sem imposto e sem contar a TR.`
+    : '';
+}
+
+// A pergunta da semana vem da trilha: quando o simulador ajuda a respondê-la, ele avisa.
+function mostrarPerguntaDaSemana() {
+  const pergunta = perguntaDaSemana(hojeEmBrasilia());
+  perguntaSemanaEl.textContent = ehPerguntaDeSimulacao(pergunta)
+    ? `Isso responde a pergunta da semana: “${pergunta.texto}”`
+    : '';
 }
 
 async function carregar() {
@@ -99,6 +126,7 @@ async function carregar() {
     const resposta = await fetch('dados/indicadores.json', { cache: 'no-store' });
     if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
     painel = await resposta.json();
+    resumoEl.textContent = resumoDoPainel(painel);
     renderizarCartoes();
     renderizarSimulacao();
     const quando = new Date(painel.atualizadoEm);
@@ -107,6 +135,7 @@ async function carregar() {
       timeStyle: 'short',
     })}`;
   } catch (erro) {
+    resumoEl.textContent = '';
     situacaoEl.textContent = 'Sem dados. Confira a conexão e toque em Atualizar.';
   }
 }
@@ -114,7 +143,9 @@ async function carregar() {
 $('atualizar').addEventListener('click', carregar);
 valorEl.addEventListener('input', renderizarSimulacao);
 mesesEl.addEventListener('change', renderizarSimulacao);
+percentualCdiEl.addEventListener('input', renderizarSimulacao);
 $('legenda').textContent = legendaNiveis();
+mostrarPerguntaDaSemana();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => null);

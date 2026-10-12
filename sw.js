@@ -8,6 +8,7 @@ const ARQUIVOS = [
   'style.css',
   'app.js',
   'indicadores.js',
+  'trilha.js',
   'manifest.webmanifest',
   'icons/icon.svg',
   'icons/icon-192.png',

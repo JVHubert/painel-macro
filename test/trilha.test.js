@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { INICIO_TRILHA, TRILHA, nivelDaTrilha, perguntaDaSemana } from '../trilha.js';
+import { INICIO_TRILHA, TRILHA, ehPerguntaDeSimulacao, nivelDaTrilha, perguntaDaSemana } from '../trilha.js';
 
 const painel = (valores) => ({ indicadores: Object.entries(valores).map(([id, valor]) => ({ id, valor })) });
 const gabarito = (id) => TRILHA[0].perguntas.find((pergunta) => pergunta.id === id).gabarito;
+const pergunta = (id) => TRILHA[0].perguntas.find((item) => item.id === id);
 const idDaSemana = (dataIso, opcoes) => perguntaDaSemana(dataIso, opcoes).id;
 
 test('o nível 1 está escrito com oito perguntas de ids únicos', () => {
@@ -63,4 +64,13 @@ test('o gabarito que depende do painel usa o cartão do dia', () => {
 
   assert.equal(gabarito('n1-04')({}), null);
   assert.equal(gabarito('n1-07')({}), null);
+});
+
+test('só a pergunta que compara com a poupança é do simulador', () => {
+  assert.equal(ehPerguntaDeSimulacao(pergunta('n1-07')), true);
+  assert.equal(ehPerguntaDeSimulacao(perguntaDaSemana('2026-11-22')), true);
+  assert.equal(ehPerguntaDeSimulacao(pergunta('n1-01')), false);
+  assert.equal(ehPerguntaDeSimulacao(pergunta('n1-04')), false);
+  assert.equal(ehPerguntaDeSimulacao(pergunta('n1-05')), false);
+  assert.equal(ehPerguntaDeSimulacao(undefined), false);
 });

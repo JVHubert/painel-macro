@@ -72,7 +72,7 @@ test('a troca da versão no sw.js reclama se a linha não estiver lá', () => {
 
 test('o painel publicado tem os mesmos arquivos do repositório', async () => {
   const publicar = await ler('tools/publicar.mjs');
-  for (const arquivo of ['index.html', 'style.css', 'app.js', 'indicadores.js', 'sw.js', 'manifest.webmanifest']) {
+  for (const arquivo of ['index.html', 'style.css', 'app.js', 'indicadores.js', 'trilha.js', 'sw.js', 'manifest.webmanifest']) {
     assert.ok(publicar.includes(`'${arquivo}'`), `${arquivo} ficaria de fora do dist/site`);
   }
   assert.ok(publicar.includes("'dados'"), 'os dados ficariam de fora do dist/site');

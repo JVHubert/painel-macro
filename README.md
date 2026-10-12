@@ -29,7 +29,7 @@ Primeira vez configurando o Telegram? Siga o [COMO-CONFIGURAR-O-BOT.md](COMO-CON
 | `tools/relatorio.mjs` | monta e envia o relatório de domingo |
 | `tools/notificar.mjs` | entrega no Telegram, senão no ntfy, senão na tela |
 | `tools/gerar-icones.mjs` | desenha os PNGs do ícone escrevendo o PNG na mão (sem dependência) |
-| `app.js` | tela: cartões, minigráfico e simulador |
+| `app.js` | tela: frase-resumo, cartões, minigráfico e simulador |
 | `sw.js` | guarda a casca no aparelho; o JSON vem da rede primeiro, com a cópia local de reserva |
 | `.github/workflows/atualizar.yml` | duas vezes ao dia: coleta, testa, commita o JSON e publica |
 | `.github/workflows/semanal.yml` | domingo 18h: monta, envia e arquiva o relatório |
@@ -50,6 +50,12 @@ HTML, CSS e JavaScript puros, sem etapa de build. O site **não** chama API nenh
 Juro real = CDI acumulado em 12 meses ÷ IPCA em 12 meses (os dois do mesmo período). O CDI ao ano é a taxa diária anualizada em 252 dias úteis.
 
 Conteúdo educativo. **Não é recomendação de investimento.**
+
+## O painel no celular
+
+Abre em `https://jvhubert.github.io/painel-macro/` (ou `npm run serve` na sua máquina) e, depois da primeira visita, funciona offline. A ordem dos cartões é a que importa para quem poupa: **Juro real** primeiro, com a borda de destaque, porque é ele que diz quanto a renda fixa paga acima da inflação; depois Selic, CDI, IPCA e dólar. No topo, uma frase-resumo escrita por regras em `indicadores.js` — nada de IA. A fonte técnica (BACEN · SGS 432) fica no pé do cartão, em texto pequeno.
+
+No simulador, o campo **% do CDI** (padrão 100) mostra um CDB que paga mais ou menos que o CDI cheio, e a linha "Na poupança seria" compara com a poupança no mesmo prazo. A poupança entra como 0,5% ao mês enquanto a Selic está acima de 8,5% ao ano (abaixo disso, 70% da Selic) e **sem a TR** — a nota embaixo do resultado diz isso. Quando a pergunta da semana é de simulação, o próprio simulador avisa, lendo a `trilha.js`.
 
 ## Relatório semanal
 

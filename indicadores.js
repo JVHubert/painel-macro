@@ -143,7 +143,45 @@ export function simulacao({ valor, cdi, ipca, meses = 12 }) {
   };
 }
 
-// Minigráfico: série de pontos -> caminho SVG.
+// Poupança: rende 0,5% ao mês + TR enquanto a Selic está acima de 8,5% ao ano; abaixo disso,
+// 70% da Selic + TR. A TR fica de fora — depende de uma série que o painel não coleta.
+export function poupanca({ valor, meses = 12, selic } = {}) {
+  const acimaDoLimite = Number(selic) > 8.5;
+  const taxaMensal = acimaDoLimite ? 0.005 : (1 + (0.7 * Number(selic)) / 100) ** (1 / 12) - 1;
+  return { taxaMensal, final: valor * (1 + taxaMensal) ** meses };
+}
+
+// Frase-resumo do painel: o significado antes do número. Regras fixas, nada de IA.
+export function resumoDoPainel(painel = {}) {
+  const achar = (id) => painel?.indicadores?.find((cartao) => cartao.id === id) ?? null;
+  const emPorcento = (numero) => formatarPercentual(numero / 100, 2);
+  const frases = [];
+
+  const juroReal = achar('juro-real');
+  if (Number.isFinite(juroReal?.valor)) {
+    frases.push(
+      juroReal.valor >= 0
+        ? `A renda fixa paga hoje cerca de ${formatarPercentual(juroReal.valor / 100, 1)} acima da inflação.`
+        : `A renda fixa não está batendo a inflação: o juro real está em ${formatarPercentual(juroReal.valor / 100, 1)}.`,
+    );
+  }
+
+  const meta = achar('meta-selic');
+  if (Number.isFinite(meta?.valor)) {
+    const antes = Number.isFinite(meta.variacao) ? meta.valor - meta.variacao : null;
+    if (antes === null || Math.abs(meta.variacao) < 0.01) {
+      frases.push(`A Selic está em ${emPorcento(meta.valor)} ao ano, sem mudança nos últimos 12 meses.`);
+    } else {
+      frases.push(
+        `A Selic ${meta.variacao > 0 ? 'subiu' : 'caiu'} de ${emPorcento(antes)} para ${emPorcento(meta.valor)} ao ano nos últimos 12 meses.`,
+      );
+    }
+  }
+
+  return frases.join(' ');
+}
+
+
 export function caminhoSparkline(serie, { largura = 120, altura = 32, margem = 3 } = {}) {
   const valores = serie.map((ponto) => ponto.valor);
   if (valores.length < 2) return '';

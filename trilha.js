@@ -95,6 +95,14 @@ export function nivelDaTrilha(nivel = TRILHA[0].nivel) {
   return TRILHA.find((item) => item.nivel === nivel) ?? TRILHA.at(-1);
 }
 
+// O simulador do painel ajuda a responder as perguntas que comparam rendimentos na mesma conta.
+const PALAVRAS_DO_SIMULADOR = ['poupança', 'CDB'];
+
+export function ehPerguntaDeSimulacao(pergunta) {
+  if (!pergunta || pergunta.tipo !== 'conta') return false;
+  return PALAVRAS_DO_SIMULADOR.some((palavra) => String(pergunta.texto ?? '').includes(palavra));
+}
+
 // Uma pergunta por semana, na ordem, a partir do início da trilha; esgotou, volta à primeira.
 export function perguntaDaSemana(
   dataIso,

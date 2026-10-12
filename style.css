@@ -29,10 +29,12 @@ body {
 
 .topo .linha { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 h1 { font-size: 26px; }
+.resumo { font-size: 17px; margin-top: 10px; }
 
 button {
   font: inherit;
   font-size: 15px;
+  min-height: 44px;
   padding: 8px 14px;
   border: 1px solid var(--linha);
   border-radius: 10px;
@@ -54,9 +56,10 @@ button:active { background: var(--linha); }
   background: #141821;
 }
 
-.cabecalho { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.cabecalho h2 { font-size: 17px; }
-.fonte { text-align: right; flex: 0 1 auto; min-width: 0; }
+/* O juro real é o cartão que importa: fica primeiro e com a borda de destaque. */
+.cartao[data-id="juro-real"] { border-color: var(--destaque); }
+
+.cartao h2 { font-size: 17px; }
 
 .valor { font-size: 34px; font-weight: 700; line-height: 1.1; margin-top: 6px; }
 .valor small { font-size: 14px; font-weight: 400; color: var(--apagado); margin-left: 6px; }
@@ -77,6 +80,8 @@ button:active { background: var(--linha); }
 
 .sobre { font-size: 14px; margin-top: 10px; }
 .referencia { margin-top: 6px; }
+/* A fonte técnica é para quem quiser conferir: fica no pé do cartão, em texto menor. */
+.cartao .fonte { font-size: 11px; margin-top: 8px; }
 
 .simulador { margin-top: 26px; border-top: 1px solid var(--linha); padding-top: 18px; }
 .simulador h2 { font-size: 20px; }

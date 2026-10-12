@@ -20,6 +20,8 @@ import {
   paraNumero,
   paraSerie,
   podeMostrarDetalhe,
+  poupanca,
+  resumoDoPainel,
   simulacao,
   urlSgs,
   valorAntes,
@@ -305,4 +307,37 @@ test('mesclarComAnterior sem anterior não inventa valor', () => {
   const { painel, mantidos } = mesclarComAnterior(novo, null);
   assert.deepEqual(mantidos, []);
   assert.equal(painel.indicadores[0].valor, null);
+});
+
+test('a poupança muda de regra conforme a Selic', () => {
+  const acima = poupanca({ valor: 1000, meses: 12, selic: 13.75 });
+  assert.equal(acima.taxaMensal, 0.005);
+  assert.ok(Math.abs(acima.final - 1000 * 1.005 ** 12) < 1e-9);
+  assert.ok(Math.abs(poupanca({ valor: 1000, meses: 24, selic: 13.75 }).final - 1000 * 1.005 ** 24) < 1e-9);
+
+  const abaixo = poupanca({ valor: 1000, meses: 12, selic: 8 });
+  assert.ok(Math.abs(abaixo.taxaMensal - ((1 + 0.7 * 0.08) ** (1 / 12) - 1)) < 1e-12);
+  assert.ok(abaixo.final < acima.final);
+});
+
+test('o resumo do painel traduz o juro real e a Selic', () => {
+  const resumo = resumoDoPainel({
+    indicadores: [
+      { id: 'meta-selic', valor: 15, variacao: -1.25 },
+      { id: 'juro-real', valor: 8.5 },
+    ],
+  });
+  assert.match(resumo, /^A renda fixa paga hoje cerca de 8,5% acima da inflação\./);
+  assert.match(resumo, /A Selic caiu de 16,25% para 15,00% ao ano nos últimos 12 meses\.$/);
+
+  const subiu = resumoDoPainel({ indicadores: [{ id: 'meta-selic', valor: 10, variacao: 2 }] });
+  assert.match(subiu, /A Selic subiu de 8,00% para 10,00% ao ano/);
+
+  const parada = resumoDoPainel({ indicadores: [{ id: 'meta-selic', valor: 10, variacao: 0 }] });
+  assert.match(parada, /A Selic está em 10,00% ao ano, sem mudança/);
+
+  const caro = resumoDoPainel({ indicadores: [{ id: 'juro-real', valor: -1.5 }] });
+  assert.match(caro, /A renda fixa não está batendo a inflação: o juro real está em -1,5%\./);
+
+  assert.equal(resumoDoPainel({}), '');
 });

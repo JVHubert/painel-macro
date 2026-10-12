@@ -17,6 +17,7 @@
       <h1>Painel macro</h1>
       <button id="atualizar" type="button">Atualizar</button>
     </div>
+    <p id="resumo" class="resumo">Carregando…</p>
     <p id="situacao" class="situacao">Carregando…</p>
   </header>
 
@@ -25,7 +26,7 @@
 
     <section class="simulador">
       <h2>Na prática</h2>
-      <p class="ajuda">Quanto um aporte renderia no CDI, já descontado o imposto de renda.</p>
+      <p class="ajuda">Quanto um aporte renderia no CDI, já descontado o imposto de renda. Use o "% do CDI" para simular um CDB que paga mais ou menos que o CDI cheio.</p>
       <div class="campos">
         <label for="valor">Valor (R$)</label>
         <input id="valor" type="number" min="0" step="100" value="1000" inputmode="decimal">
@@ -36,8 +37,12 @@
           <option value="24">2 anos</option>
           <option value="60">5 anos</option>
         </select>
+        <label for="percentual-cdi">% do CDI</label>
+        <input id="percentual-cdi" type="number" min="0" step="5" value="100" inputmode="numeric">
       </div>
       <dl id="resultado" class="resultado"></dl>
+      <p id="nota-poupanca" class="ajuda"></p>
+      <p id="pergunta-semana" class="ajuda"></p>
     </section>
 
     <footer>
