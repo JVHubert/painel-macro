@@ -13,7 +13,8 @@ Primeira vez configurando o Telegram? Siga o [COMO-CONFIGURAR-O-BOT.md](COMO-CON
 | Arquivo | Papel |
 |---|---|
 | `indicadores.js` | contas puras: juros compostos, IPCA em 12 meses, juro real, tabela do imposto de renda, formatação |
-| `relatorio.js` | texto do relatório semanal: semana ISO, perguntas, resultado por posição, comparação com o CDI |
+| `relatorio.js` | texto do relatório semanal: semana ISO, resultado por posição, comparação com o CDI |
+| `trilha.js` | o currículo como dado: as perguntas de cada nível, com tipo, gabarito e a prova |
 | `carteira.example.json` | modelo dos seus dados (copie para `carteira.json`, que fica fora do git) |
 | `PROMPT.md` | instruções para o seu professor de IA (colar no Gemini/ChatGPT) |
 | `relatorios/` | histórico do que você recebeu, na sua máquina (fora do git) |
@@ -60,7 +61,7 @@ Todo domingo às 18h (Brasília) o workflow "Relatório semanal" monta e **envia
 - **Carteira** — uma linha por papel (aplicado, hoje, resultado, % do patrimônio) e quanto o mesmo dinheiro teria rendido no CDI.
 - **Sobra do mês** — sobra, aporte programado e o que sobra sem destino.
 - **Macro** — Selic, CDI, IPCA 12 meses, juro real e dólar, sem cor, no fim.
-- **Pergunta da semana** — uma das 12 gira a cada domingo, para estudar com o `PROMPT.md`.
+- **Pergunta da semana** — vem da `trilha.js`: uma pergunta do nível atual por domingo, em ordem, começando pela n1-01, para estudar com o `PROMPT.md`.
 
 A imagem cabe em cerca de duas telas de celular. Diário e trilha de estudo só aparecem nas execuções feitas na sua máquina (os arquivos são privados).
 

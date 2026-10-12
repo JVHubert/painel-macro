@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { NIVEIS, anualizarDiaria, compararComCdi, legendaNiveis, nivelDeResultado, taxaEquivalente } from '../indicadores.js';
 import {
-  PERGUNTAS,
   alocacao,
   deltaPeriodo,
   deslocarDias,
@@ -13,7 +12,6 @@ import {
   nivelDoCdi,
   numeroDaSemana,
   paraEstaSemana,
-  perguntaDaSemana,
   resumoMacro,
   resumoPosicao,
   resumoReserva,
@@ -69,13 +67,6 @@ test('numeroDaSemana segue o calendário ISO', () => {
   assert.equal(numeroDaSemana('2026-01-01'), 1);
   assert.equal(numeroDaSemana('2025-12-29'), 1);
   assert.equal(numeroDaSemana('2026-12-31'), 53);
-});
-
-test('a pergunta da semana gira e é estável dentro da semana', () => {
-  assert.equal(perguntaDaSemana('2026-10-11'), perguntaDaSemana('2026-10-10'));
-  assert.equal(perguntaDaSemana('2026-10-11'), PERGUNTAS[40 % PERGUNTAS.length]);
-  assert.notEqual(perguntaDaSemana('2026-10-11'), perguntaDaSemana('2026-10-18'));
-  assert.equal(PERGUNTAS.length, 12);
 });
 
 test('variação de período usa o ponto mais recente até a data limite', () => {
@@ -397,7 +388,7 @@ test('paraEstaSemana prioriza o excedente, o produto ruim e a pergunta', () => {
   assert.match(itens[0], /R\$ 4\.000,00 acima da meta de 6 meses — decida o destino e registre no diário\./);
   assert.match(itens[1], /Caixinha X rende 80% do CDI\./);
   assert.match(itens[2], /1 decisão do diário para revisar\./);
-  assert.match(pergunta, /^Quanto rendem R\$ 1\.000 em 3 anos no CDI\?/);
+  assert.match(pergunta, /^R\$ 1\.000 a 1% ao mês por 12 meses viram quanto\?/);
 });
 
 test('relatório completo monta todos os blocos', () => {

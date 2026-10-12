@@ -11,6 +11,7 @@ import {
   nivelDeResultado,
   valorAntes,
 } from './indicadores.js';
+import { perguntaDaSemana } from './trilha.js';
 
 const reais = (valor) => `R$ ${formatarNumero(valor, 2)}`;
 const seta = (valor) => (valor > 0 ? '+' : valor < 0 ? '-' : '=');
@@ -29,25 +30,6 @@ export function numeroDaSemana(dataIso) {
   data.setUTCDate(data.getUTCDate() + 4 - (data.getUTCDay() || 7));
   const inicio = new Date(Date.UTC(data.getUTCFullYear(), 0, 1));
   return Math.ceil(((data - inicio) / 86400000 + 1) / 7);
-}
-
-export const PERGUNTAS = [
-  'Por que a Selic sobe quando a inflação sobe? O que o Copom quer desestimular?',
-  'Se o CDI rende o que está no painel e a inflação de 12 meses é o que está lá, quanto sobra de verdade? Faça a conta sem olhar.',
-  'CDB de 100% do CDI com liquidez diária ou de 110% sem liquidez: qual vai para a reserva de emergência e por quê?',
-  'O que é marcação a mercado e por que ela só dói se você vender antes do vencimento?',
-  'Quanto rendem R$ 1.000 em 3 anos no CDI? Compare com a poupança (0,5% ao mês + TR).',
-  'Por que o imposto de renda da renda fixa cai quanto mais tempo você deixa o dinheiro parado?',
-  'O que o FGC cobre, até quanto, e o seu CDB atual está dentro desse limite?',
-  'Por que dividendo não é dinheiro de graça? O que acontece com o preço da ação no dia seguinte?',
-  'Sua reserva cobre quantos meses do seu custo de vida? Se for menos de seis, o que muda neste mês?',
-  'Se a bolsa cair 30% na semana que vem, sua rotina muda? Se sim, seu risco está acima do seu estômago.',
-  'Explique em três frases por que você comprou cada ação da sua carteira, sem olhar a cotação.',
-  'Qual foi sua melhor e sua pior decisão financeira no ano? O que você aprendeu de fato com cada uma?',
-];
-
-export function perguntaDaSemana(dataIso) {
-  return PERGUNTAS[(numeroDaSemana(dataIso) - 1) % PERGUNTAS.length];
 }
 
 // Variação do último ponto contra o ponto mais recente até N dias atrás.
@@ -431,7 +413,7 @@ export function paraEstaSemana(dados = {}) {
     itens.push('A resposta da semana continua vazia.');
   }
 
-  return { itens, pergunta: perguntaDaSemana(dados.data) };
+  return { itens, pergunta: perguntaDaSemana(dados.data)?.texto ?? '' };
 }
 
 // A reserva numa tabela só: onde está, quanto tem, o que rende e quanto isso é do CDI.

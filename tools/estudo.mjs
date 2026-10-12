@@ -5,13 +5,14 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { CAMPOS_RESPOSTA, adicionarBloco, criarBloco, lerEntradas, painelDoEstudo } from '../caderno.js';
 import { hojeEmBrasilia } from '../indicadores.js';
-import { numeroDaSemana, perguntaDaSemana } from '../relatorio.js';
+import { numeroDaSemana } from '../relatorio.js';
+import { perguntaDaSemana } from '../trilha.js';
 
 const ARQUIVO = new URL('../estudo/respostas.md', import.meta.url);
 const PASTA = new URL('../estudo/', import.meta.url);
 const HOJE = hojeEmBrasilia();
 const SEMANA = String(numeroDaSemana(HOJE));
-const PERGUNTA = perguntaDaSemana(HOJE);
+const PERGUNTA = perguntaDaSemana(HOJE).texto;
 
 async function ler() {
   try {
