@@ -45,7 +45,7 @@ HTML, CSS e JavaScript puros, sem etapa de build. O site **não** chama API nenh
 | Dólar, cotação do dia | AwesomeAPI (`USD-BRL`) | — |
 | Ações da carteira | Yahoo Finance (`RENT3.SA`) | — |
 
-Juro real = meta Selic ÷ IPCA em 12 meses. O CDI ao ano é a taxa diária anualizada em 252 dias úteis.
+Juro real = CDI acumulado em 12 meses ÷ IPCA em 12 meses (os dois do mesmo período). O CDI ao ano é a taxa diária anualizada em 252 dias úteis.
 
 Conteúdo educativo. **Não é recomendação de investimento.**
 

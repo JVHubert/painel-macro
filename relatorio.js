@@ -262,7 +262,7 @@ export function dadosMacro(painel, { dias = 7, hoje } = {}) {
   const variacaoDolar = dolar && !semDado(dolar) ? variacaoPeriodo(dolar.serie, dias) : null;
   const emPontos = (valor) => `${seta(valor)}${formatarNumero(Math.abs(valor))} p.p.`;
 
-  const notas = ['taxas ao ano · juro real = meta Selic acima do IPCA'];
+  const notas = ['taxas ao ano · juro real = CDI dos últimos 12 meses acima do IPCA'];
   if (cdi?.extra) notas.push(`CDI acumulado em 12 meses: ${formatarPercentual(cdi.extra.percentual)}`);
 
   return {

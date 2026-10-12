@@ -85,6 +85,28 @@ export function juroReal(nominal, inflacao) {
   return (1 + nominal) / (1 + inflacao) - 1;
 }
 
+// Juro real mês a mês (para o minigráfico): CDI acumulado em 12 meses contra o IPCA do mesmo
+// período, até cada mês. O IPCA é quem manda no calendário — é ele que tem um ponto por mês.
+export function juroRealMensal(cdiDiaria = [], ipcaMensal = [], { meses = 24 } = {}) {
+  const cdiDoMes = new Map();
+  for (const ponto of cdiDiaria) {
+    const chave = ponto.data.slice(0, 7);
+    cdiDoMes.set(chave, (cdiDoMes.get(chave) ?? 1) * (1 + ponto.valor / 100));
+  }
+  const ipcaDoMes = new Map(ipcaMensal.map((ponto) => [ponto.data.slice(0, 7), 1 + ponto.valor / 100]));
+
+  const serie = [];
+  const mesesComIpca = [...ipcaDoMes.keys()].sort();
+  for (let i = 11; i < mesesComIpca.length; i += 1) {
+    const janela = mesesComIpca.slice(i - 11, i + 1);
+    if (janela.some((chave) => !cdiDoMes.has(chave))) continue;
+    const cdi12 = janela.reduce((total, chave) => total * cdiDoMes.get(chave), 1);
+    const ipca12 = janela.reduce((total, chave) => total * ipcaDoMes.get(chave), 1);
+    serie.push({ data: `${janela.at(-1)}-01`, valor: (cdi12 / ipca12 - 1) * 100 });
+  }
+  return serie.slice(-meses);
+}
+
 // O log do GitHub Actions de repositório público é público: lá não entra nome nem valor do JV.
 export function podeMostrarDetalhe(env = {}) {
   return env.GITHUB_ACTIONS !== 'true';
@@ -116,7 +138,8 @@ export function simulacao({ valor, cdi, ipca, meses = 12 }) {
     rotuloAliquota: faixa.rotulo,
     liquido,
     inflacao,
-    ganhoReal: liquido - inflacao,
+    // Desconta a inflação do valor final (principal + líquido), não do rendimento isolado.
+    ganhoReal: (valor + liquido) / (1 + ipca) ** (meses / 12) - valor,
   };
 }
 
@@ -162,7 +185,8 @@ const EXPLICACOES = {
     'Juros básicos definidos pelo Copom. Quando sobe, segura a inflação e faz a renda fixa pagar mais.',
   cdi: 'Taxa que os bancos cobram entre si. É o que rende a maior parte dos CDBs e a poupança do seu banco, quase sempre colada na Selic.',
   ipca: 'Inflação oficial do país. É o número que corrói o seu rendimento: ganhar menos que isso é perder poder de compra.',
-  'juro-real': 'Quanto a renda fixa paga acima da inflação. É esse número que importa para quem poupa.',
+  'juro-real':
+    'O CDI dos últimos 12 meses comparado com o IPCA do mesmo período. É esse número que importa para quem poupa.',
   dolar: 'Preço do dólar. Serve de termômetro de risco e é a base do custo de qualquer investimento lá fora.',
 };
 
@@ -196,7 +220,8 @@ export function montarIndicadores(bruto = {}, { hoje = hojeEmBrasilia(), atualiz
         })()
       : null;
 
-  const juroRealAtual = meta && ipca12Meses !== null ? juroReal(meta.valor / 100, ipca12Meses) : null;
+  const juroRealAtual = cdi12Meses !== null && ipca12Meses !== null ? juroReal(cdi12Meses, ipca12Meses) : null;
+  const juroRealSerie = juroRealMensal(serie('cdiDiaria'), serie('ipcaMensal'));
 
   const cartoes = [
     {
@@ -244,15 +269,15 @@ export function montarIndicadores(bruto = {}, { hoje = hojeEmBrasilia(), atualiz
     {
       id: 'juro-real',
       nome: 'Juro real',
-      unidade: '% ao ano',
+      unidade: '% nos últimos 12 meses',
       prefixoValor: '',
       valor: juroRealAtual === null ? null : juroRealAtual * 100,
-      referencia: meta?.data ?? null,
+      referencia: juroRealSerie.at(-1)?.data ?? ultimo('ipcaMensal')?.data ?? null,
       fonte: 'cálculo do painel',
       variacao: null,
       rotuloVariacao: '',
       extra: null,
-      serie: [],
+      serie: juroRealSerie,
     },
     {
       id: 'dolar',

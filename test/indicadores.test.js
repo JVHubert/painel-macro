@@ -13,6 +13,7 @@ import {
   formatarPercentual,
   hojeEmBrasilia,
   juroReal,
+  juroRealMensal,
   mesclarComAnterior,
   montarIndicadores,
   mudancas,
@@ -99,6 +100,22 @@ test('juro real desconta a inflação', () => {
   assert.ok(Math.abs(juroReal(0.05, 0.05)) < 1e-12);
 });
 
+test('juro real mensal: CDI de 12 meses contra IPCA de 12 meses', () => {
+  // 13 meses de IPCA a 0,5% e 21 dias úteis de CDI a 0,05% por mês, para conferir a janela.
+  const ipcaMensal = Array.from({ length: 13 }, (_, i) => ({
+    data: `${2025 + Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}-01`,
+    valor: 0.5,
+  }));
+  const cdiDiaria = ipcaMensal.flatMap((ponto) =>
+    Array.from({ length: 21 }, () => ({ data: ponto.data, valor: 0.05 })),
+  );
+  const serie = juroRealMensal(cdiDiaria, ipcaMensal);
+  // 13 meses de IPCA dão 2 janelas de 12 meses.
+  assert.equal(serie.length, 2);
+  assert.equal(serie.at(-1).data, '2026-01-01');
+  assert.ok(Math.abs(serie.at(-1).valor - (1.0005 ** (21 * 12) / 1.005 ** 12 - 1) * 100) < 1e-9);
+});
+
 test('tabela regressiva do imposto de renda', () => {
   assert.equal(faixaIR(180).aliquota, 0.225);
   assert.equal(faixaIR(181).aliquota, 0.2);
@@ -116,7 +133,8 @@ test('simulação de aporte no CDI por 12 meses', () => {
   assert.ok(Math.abs(r.imposto - 23.8875) < 0.001);
   assert.ok(Math.abs(r.liquido - 112.6125) < 0.001);
   assert.ok(Math.abs(r.inflacao - 45.8) < 0.001);
-  assert.ok(Math.abs(r.ganhoReal - 66.8125) < 0.001);
+  // (1000 + 112,6125) descontado pela inflação de 4,58% = 1.063,89
+  assert.ok(Math.abs(r.ganhoReal - 63.8865) < 0.001);
 });
 
 test('simulação muda a alíquota conforme o prazo', () => {
@@ -198,8 +216,9 @@ test('monta os cartões do painel', () => {
   assert.ok(Math.abs(ipca.valor - 4.907) < 0.01);
   assert.ok(Math.abs(ipca.extra.percentual - 0.004) < 1e-12);
 
-  // (1,1375 / (1 + 4,9067%)) - 1
-  assert.ok(Math.abs(juroReal.valor - 8.43) < 0.01);
+  // CDI de 12 meses (13,88%) contra o IPCA de 12 meses (4,9067%)
+  assert.ok(Math.abs(juroReal.valor - 8.55) < 0.01);
+  assert.equal(juroReal.unidade, '% nos últimos 12 meses');
 
   assert.equal(dolar.valor, 4.9918);
   assert.ok(Math.abs(dolar.variacao + 0.00520138) < 1e-9);
