@@ -3,14 +3,17 @@
 //      npm run relatorio -- --seco (monta e salva, mas não envia nada)
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
-import { deslocarDias, montarRelatorio, resumoMacro, resumoPosicao } from '../relatorio.js';
+import { montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
+import { lerEntradas, situacao } from '../caderno.js';
 import { renderizar } from './imagem.mjs';
-import { buscarJson, cotacao, serieCdi } from './mercado.mjs';
+import { cotacao, serieCdi } from './mercado.mjs';
 import { enviarFoto, enviarSemDerrubar } from './notificar.mjs';
 
 const DADOS = new URL('../dados/indicadores.json', import.meta.url);
 const CARTEIRA = new URL('../carteira.json', import.meta.url);
+const DIARIO = new URL('../diario/decisoes.md', import.meta.url);
+const ESTUDO = new URL('../estudo/respostas.md', import.meta.url);
 const PASTA = new URL('../relatorios/', import.meta.url);
 const HOJE = hojeEmBrasilia();
 // `--seco` monta e salva o relatório sem enviar (para conferir a imagem antes de publicar).
@@ -33,13 +36,32 @@ async function lerJson(url, dica) {
   }
 }
 
+// Diário e estudo são arquivos privados: no GitHub eles não existem e o relatório segue sem eles.
+async function lerTexto(url) {
+  try {
+    return await readFile(url, 'utf8');
+  } catch {
+    return '';
+  }
+}
+
+function resumoDoCaderno(hoje, textoDoDiario, textoDoEstudo) {
+  const decisoes = lerEntradas(textoDoDiario);
+  const respostas = lerEntradas(textoDoEstudo);
+  const daSemana = respostas.find((entrada) => entrada.titulo === String(numeroDaSemana(hoje)));
+  return {
+    decisoesVencidas: decisoes.filter((entrada) => situacao(entrada, hoje).vencida).length,
+    decisoesSemTese: decisoes.filter((entrada) => !entrada.campos.tese).length,
+    respostaDaSemanaVazia: Boolean(daSemana && !daSemana.campos.resposta),
+  };
+}
+
 const painel = await lerJson(DADOS, 'Rode `npm run coletar` primeiro.');
 
 const carteira = await lerJson(
   CARTEIRA,
   'Copie carteira.example.json para carteira.json e preencha seus dados (ele não vai para o git).',
 );
-const macro = resumoMacro(painel);
 
 const posicoes = [];
 const avisos = [];
@@ -98,23 +120,8 @@ function medirReserva(reserva) {
   return detalhe.length ? { ...reserva, detalhe } : reserva;
 }
 
-const texto = montarRelatorio({
-  data: HOJE,
-  macro,
-  posicoes,
-  reserva: medirReserva(carteira.reserva),
-  receitaMensal: carteira.receitaMensal,
-  custoMensal: carteira.custoMensal,
-  aporteMensal: carteira.aporteMensal,
-  avisos,
-});
-
-await mkdir(PASTA, { recursive: true });
-await writeFile(new URL(`${HOJE}.md`, PASTA), `${texto}\n`, 'utf8');
-console.log(`relatório salvo em relatorios/${HOJE}.md`);
-
-// A imagem (com cor de verdade) é o canal principal; o texto é a reserva.
-const dadosComuns = {
+// Dados uma vez só: o texto e a imagem saem do mesmo objeto.
+const dados = {
   data: HOJE,
   painel,
   posicoes,
@@ -123,11 +130,18 @@ const dadosComuns = {
   custoMensal: carteira.custoMensal,
   aporteMensal: carteira.aporteMensal,
   avisos,
+  caderno: resumoDoCaderno(HOJE, await lerTexto(DIARIO), await lerTexto(ESTUDO)),
 };
 
+const texto = montarRelatorio(dados);
+await mkdir(PASTA, { recursive: true });
+await writeFile(new URL(`${HOJE}.md`, PASTA), `${texto}\n`, 'utf8');
+console.log(`relatório salvo em relatorios/${HOJE}.md`);
+
+// A imagem (com cor de verdade) é o canal principal; o texto é a reserva.
 let enviado = null;
 try {
-  const png = await renderizar(montarHtml(dadosComuns));
+  const png = await renderizar(montarHtml(dados));
   await writeFile(new URL(`${HOJE}.png`, PASTA), png);
   console.log(`imagem salva em relatorios/${HOJE}.png (${Math.round(png.length / 1024)} KB)`);
   if (!SECO) {

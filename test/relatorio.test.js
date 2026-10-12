@@ -3,13 +3,16 @@ import assert from 'node:assert/strict';
 import { NIVEIS, anualizarDiaria, compararComCdi, legendaNiveis, nivelDeResultado, taxaEquivalente } from '../indicadores.js';
 import {
   PERGUNTAS,
+  alocacao,
   deltaPeriodo,
   deslocarDias,
   encurtar,
+  fraseResumo,
   montarRelatorio,
   nivelDaReserva,
   nivelDoCdi,
   numeroDaSemana,
+  paraEstaSemana,
   perguntaDaSemana,
   resumoMacro,
   resumoPosicao,
@@ -183,7 +186,7 @@ test('posição calcula resultado e comparação com o CDI', () => {
 test('posição sem preço médio vira pendência, não número inventado', () => {
   const texto = montarRelatorio({
     data: '2026-10-11',
-    macro: resumoMacro(PAINEL),
+    painel: PAINEL,
     posicoes: [
       resumoPosicao(
         { ticker: 'RENT3', quantidade: 10, precoMedio: null, dataCompra: null },
@@ -192,16 +195,15 @@ test('posição sem preço médio vira pendência, não número inventado', () =
     ],
     reserva: { atual: 0 },
   });
-  assert.match(texto, /RENT3 \(10 cotas\)/);
-  assert.match(texto, /R\$ 545,10/);
+  assert.match(texto, /RENT3\s+–\s+R\$ 545,10/);
   assert.match(texto, /PENDÊNCIAS[\s\S]*preencha o precoMedio de RENT3/);
   assert.ok(!texto.includes('NaN'));
 });
 
-test('dois lotes do mesmo papel ganham soma e o CDI de cada data', () => {
+test('dois lotes do mesmo papel viram uma linha e só se abrem quando divergem', () => {
   const texto = montarRelatorio({
     data: '2026-10-11',
-    macro: resumoMacro(PAINEL),
+    painel: PAINEL,
     posicoes: [
       resumoPosicao(
         { ticker: 'RENT3', quantidade: 10, precoMedio: 20, dataCompra: '2023-01-10' },
@@ -216,14 +218,14 @@ test('dois lotes do mesmo papel ganham soma e o CDI de cada data', () => {
     ],
     reserva: { atual: 0 },
   });
-  assert.match(texto, /soma\s+R\$ 700,00\s+R\$ 630,00\s+-10,00% 🟡/);
-  assert.match(texto, /10 cotas\s+50,00%\s+-45,0 p\.p\. 🔴/);
-  assert.match(texto, /20 cotas\s+10,00%\s+-26,0 p\.p\. 🔴/);
+  assert.match(texto, /RENT3\s+R\$ 700,00\s+R\$ 630,00\s+-10,00% 🟡\s+100,0%/);
   // 200×1,50 + 500×1,10 = 850
   assert.match(texto, /Se o mesmo dinheiro tivesse ficado no CDI: R\$ 850,00 \(hoje: R\$ 630,00\)/);
-  assert.ok(!/soma\s+R\$ 850,00/.test(texto), 'a tabela do CDI não mistura R$ com %');
+  // 5,00% e -16,00% divergem mais de 5 p.p.: os lotes aparecem.
+  assert.match(texto, /lotes de RENT3/);
+  assert.match(texto, /10\s+R\$ 200,00\s+R\$ 210,00\s+5,00% 🟢/);
+  assert.match(texto, /20\s+R\$ 500,00\s+R\$ 420,00\s+-16,00% 🟡/);
   assert.match(texto, /só preço; não inclui dividendos nem imposto/);
-  assert.match(texto, /na semana 5,00% 🟢/);
 });
 
 test('reserva calcula cobertura e usa a cor do progresso', () => {
@@ -277,11 +279,10 @@ test('reserva detalhada separa medido de prometido', () => {
 
   assert.match(texto, /Saldo\s+R\$ 3\.100,00/);
   assert.match(texto, /Conta corrente\s+1\.000,00/);
-  assert.match(texto, /Caixinha X\s+1\.100,00/);
-  assert.match(texto, /Caixinha X\s+13,20%\s+112% 🟢/);
-  assert.match(texto, /Cofrinho W\s+10,20%\s+86% 🟡/);
-  assert.match(texto, /Cofrinho Y\s+7,30%\s+62% 🔴/);
-  assert.match(texto, /Cofrinho Z\s+120% do CDI/);
+  assert.match(texto, /Caixinha X\s+1\.100,00\s+13,20%\s+112% 🟢/);
+  assert.match(texto, /Cofrinho W\s+200,00\s+10,20%\s+86% 🟡/);
+  assert.match(texto, /Cofrinho Y\s+500,00\s+7,30%\s+62% 🔴/);
+  assert.match(texto, /Cofrinho Z\s+300,00\s+120% do CDI\s+–/);
   // Só quem tem taxa prometida e nenhuma data vira pendência.
   assert.deepEqual([...pendencias], ['informe dataAporte e rendimento de Cofrinho Z para eu medir']);
 });
@@ -350,10 +351,59 @@ test('comparação com o CDI no mesmo período', () => {
   assert.equal(compararComCdi(0.12, 0), null);
 });
 
+test('alocação mostra reserva e ações em %', () => {
+  const { total, partes } = alocacao({
+    reserva: { detalhe: [{ nome: 'Caixinha X', saldo: 990 }] },
+    posicoes: [{ mercado: 10 }],
+  });
+  assert.equal(total, 1000);
+  assert.deepEqual(
+    partes.map((parte) => [parte.nome, parte.fracao]),
+    [
+      ['Reserva', 0.99],
+      ['Ações', 0.01],
+    ],
+  );
+  assert.deepEqual(alocacao({}), { total: 0, partes: [] });
+});
+
+test('fraseResumo diz o que a semana fez e onde a reserva está', () => {
+  const frase = fraseResumo({
+    painel: PAINEL,
+    posicoes: [resumoPosicao({ ticker: 'RENT3', quantidade: 10, precoMedio: 20 }, { preco: 21, variacaoSemana: 0.05 })],
+    reserva: { alvoMeses: 6, detalhe: [{ nome: 'Caixinha X', saldo: 9000 }] },
+    custoMensal: 1000,
+  });
+  assert.match(frase, /^Patrimônio ≈ \+/);
+  assert.match(frase, /Reserva segue bem acima da meta \(9,0 meses de custo\)\./);
+});
+
+test('paraEstaSemana prioriza o excedente, o produto ruim e a pergunta', () => {
+  const { itens, pergunta } = paraEstaSemana({
+    data: '2026-10-11',
+    painel: PAINEL,
+    posicoes: [],
+    custoMensal: 1000,
+    reserva: {
+      alvoMeses: 6,
+      detalhe: [
+        { nome: 'Caixinha X', saldo: 9000, medido: { taxaAnual: 0.08, percentualDoCdi: 0.8 } },
+        { nome: 'Cofrinho Y', saldo: 1000, medido: { taxaAnual: 0.14, percentualDoCdi: 1.2 } },
+      ],
+    },
+    caderno: { decisoesVencidas: 1, decisoesSemTese: 2, respostaDaSemanaVazia: true },
+  });
+  assert.equal(itens.length, 3, 'no máximo 3 itens');
+  assert.match(itens[0], /R\$ 4\.000,00 acima da meta de 6 meses — decida o destino e registre no diário\./);
+  assert.match(itens[1], /Caixinha X rende 80% do CDI\./);
+  assert.match(itens[2], /1 decisão do diário para revisar\./);
+  assert.match(pergunta, /^Quanto rendem R\$ 1\.000 em 3 anos no CDI\?/);
+});
+
 test('relatório completo monta todos os blocos', () => {
   const texto = montarRelatorio({
     data: '2026-10-11',
-    macro: resumoMacro(PAINEL),
+    painel: PAINEL,
     posicoes: [
       resumoPosicao(
         { ticker: 'RENT3', quantidade: 10, precoMedio: 40, dataCompra: '2026-01-01' },
@@ -368,35 +418,26 @@ test('relatório completo monta todos os blocos', () => {
     avisos: ['teste de aviso'],
   });
 
-  assert.match(texto, /📊 Relatório semanal — 11\/10\/2026/);
-  const blocos = [
-    'MACRO',
-    'CARTEIRA',
-    'RESERVA',
-    'SOBRA DO MÊS',
-    'APORTE',
-    'PERGUNTA DA SEMANA (41)',
-    'LEGENDA:',
-    'PENDÊNCIAS',
-  ];
+  assert.match(texto, /📊 Relatório semanal — 11\/10\/2026 · semana 41/);
+  assert.match(texto, /Patrimônio ≈ \+/);
+  const blocos = ['PARA ESTA SEMANA', 'PATRIMÔNIO', 'RESERVA', 'CARTEIRA', 'SOBRA DO MÊS', 'MACRO', 'LEGENDA:', 'PENDÊNCIAS'];
   for (const bloco of blocos) {
     assert.ok(texto.includes(bloco), `faltou o bloco ${bloco}`);
   }
-  assert.match(texto, /Receita\s+R\$ 7\.000,00/);
-  assert.match(texto, /Custo\s+-R\$ 4\.000,00/);
-  assert.match(texto, /Livre\s+R\$ 3\.000,00/);
-  assert.match(texto, /programado\s+R\$ 500,00 por mês/);
-  assert.match(texto, /\+26,3 p\.p\. 🔵/);
+  // "Para esta semana" vem logo depois do cabeçalho.
+  const ordem = blocos.map((bloco) => texto.indexOf(bloco));
+  assert.deepEqual(ordem, [...ordem].sort((a, b) => a - b), 'os blocos estão fora de ordem');
+  assert.match(texto, /Sobra R\$ 3\.000,00 · aporte programado R\$ 500,00 · sobram R\$ 2\.500,00 sem destino/);
   assert.match(texto, /- teste de aviso/);
 });
 
 test('relatório sem posições diz que a carteira está vazia', () => {
   const texto = montarRelatorio({
     data: '2026-10-11',
-    macro: resumoMacro(PAINEL),
+    painel: PAINEL,
     posicoes: [],
     reserva: {},
   });
   assert.match(texto, /nenhuma posição em carteira\.json/);
-  assert.ok(!texto.includes('APORTE'));
+  assert.ok(!texto.includes('SOBRA DO MÊS'));
 });

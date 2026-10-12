@@ -53,11 +53,16 @@ Conteúdo educativo. **Não é recomendação de investimento.**
 
 Todo domingo às 18h (Brasília) o workflow "Relatório semanal" monta e **envia uma imagem** no Telegram, com tabelas e cores de verdade:
 
-- **Macro** — Selic, CDI, IPCA 12 meses, juro real e dólar, com a variação da semana.
-- **Carteira** — cada lote com valor aplicado, valor de hoje, seu resultado e quanto o CDI teria rendido desde a data da compra.
-- **Reserva** — saldo, meses de custo cobertos, quanto cada caixinha rendeu medido contra o CDI, e o que está prometido.
-- **Sobra do mês** e **aporte programado**.
+- **Frase-resumo** no topo — o que a semana fez com o patrimônio e onde a reserva está.
+- **Para esta semana** — até 3 ações decididas por regras (excedente da reserva, produto rendendo pouco, diário e estudo) e a pergunta do estudo.
+- **Patrimônio** — total, variação estimada da semana e a barra de alocação (reserva × ações).
+- **Reserva** — uma tabela só: onde está, saldo, o que rende e quanto isso é do CDI.
+- **Carteira** — uma linha por papel (aplicado, hoje, resultado, % do patrimônio) e quanto o mesmo dinheiro teria rendido no CDI.
+- **Sobra do mês** — sobra, aporte programado e o que sobra sem destino.
+- **Macro** — Selic, CDI, IPCA 12 meses, juro real e dólar, sem cor, no fim.
 - **Pergunta da semana** — uma das 12 gira a cada domingo, para estudar com o `PROMPT.md`.
+
+A imagem cabe em cerca de duas telas de celular. Diário e trilha de estudo só aparecem nas execuções feitas na sua máquina (os arquivos são privados).
 
 Tudo fica arquivado em `relatorios/AAAA-MM-DD.png` (e `.md`, em texto) na sua máquina — nada disso vai para o GitHub. A sua cópia de segurança do histórico é o próprio Telegram.
 

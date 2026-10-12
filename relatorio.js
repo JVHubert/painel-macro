@@ -14,6 +14,8 @@ import {
 
 const reais = (valor) => `R$ ${formatarNumero(valor, 2)}`;
 const seta = (valor) => (valor > 0 ? '+' : valor < 0 ? '-' : '=');
+const plural = (quantidade, singular, pluralDaPalavra) =>
+  `${quantidade} ${quantidade === 1 ? singular : pluralDaPalavra}`;
 
 export function deslocarDias(dataIso, dias) {
   const [ano, mes, dia] = dataIso.split('-').map(Number);
@@ -168,77 +170,81 @@ export function totaisDoTicker(lotes) {
   };
 }
 
-function tabelaDoTicker(ticker, lotes, pendencias) {
-  const blocos = [];
-  const totais = totaisDoTicker(lotes);
-  blocos.push(`${ticker} (${totais.quantidade} ${totais.quantidade === 1 ? 'cota' : 'cotas'})`);
-
-  const variacaoSemana = lotes[0]?.variacaoSemana;
-  const nivelSemana = nivelDeResultado(variacaoSemana);
-  const linhas = [['Qtd', 'Aplicado', 'Hoje', 'Resultado']];
-  for (const lote of lotes) {
-    if (lote.investido === null) pendencias.add(`preencha o precoMedio de ${ticker} em carteira.json`);
-    if (!lote.dataCompra) pendencias.add(`informe dataCompra de ${ticker} para comparar com o CDI`);
-    linhas.push([
-      formatarNumero(lote.quantidade, 0),
-      lote.investido === null ? '–' : reais(lote.investido),
-      lote.mercado === null ? '–' : reais(lote.mercado),
-      lote.rentabilidade === null
-        ? '–'
-        : `${formatarPercentual(lote.rentabilidade)} ${lote.nivel?.emoji ?? ''}`.trim(),
-    ]);
-  }
-  if (lotes.length > 1) {
-    linhas.push([
-      'soma',
-      totais.investido === null ? '–' : reais(totais.investido),
-      totais.mercado === null ? '–' : reais(totais.mercado),
-      totais.rentabilidade === null
-        ? '–'
-        : `${formatarPercentual(totais.rentabilidade)} ${nivelDeResultado(totais.rentabilidade)?.emoji ?? ''}`.trim(),
-    ]);
-  }
-  blocos.push(tabela(linhas, { colunas: ['dir', 'dir', 'dir', 'dir'] }));
-
-  if (variacaoSemana !== null && variacaoSemana !== undefined) {
-    blocos.push(
-      `hoje ${formatarPercentual(lotes[0].variacaoDia ?? 0)} · na semana ${formatarPercentual(
-        variacaoSemana,
-      )} ${nivelSemana?.emoji ?? ''}`.trim(),
-    );
-  }
-
-  // Contra o CDI: cada lote com a sua própria data de compra.
-  const comCdi = lotes.filter((lote) => lote.cdiNoPeriodo !== null);
-  if (comCdi.length) {
-    const linhasCdi = [['Lote', 'CDI no período', 'Diferença']];
-    const rotulo = (lote) => `${formatarNumero(lote.quantidade, 0)} ${lote.quantidade === 1 ? 'cota' : 'cotas'}`;
-    for (const lote of comCdi) {
-      linhasCdi.push([
-        rotulo(lote),
-        formatarPercentual(lote.cdiNoPeriodo),
-        `${seta(lote.vsCdi)}${formatarNumero(Math.abs(lote.vsCdi) * 100, 1)} p.p. ${lote.nivelVsCdi?.emoji ?? ''}`.trim(),
-      ]);
+// Uma linha por papel. Os lotes só aparecem quando divergem mais de 5 p.p. entre si.
+export function linhasDaCarteira(posicoes, { patrimonio = null } = {}) {
+  const pendencias = new Set();
+  const linhas = [];
+  for (const [ticker, lotes] of agruparPorTicker(posicoes)) {
+    const totais = totaisDoTicker(lotes);
+    for (const lote of lotes) {
+      if (lote.investido === null) pendencias.add(`preencha o precoMedio de ${ticker} em carteira.json`);
+      if (!lote.dataCompra) pendencias.add(`informe dataCompra de ${ticker} para comparar com o CDI`);
     }
-    blocos.push('Contra o CDI (o que o mesmo dinheiro teria rendido)');
-    blocos.push(tabela(linhasCdi, { colunas: ['esq', 'dir', 'dir'] }));
-    if (comCdi.length > 1 && totais.noCdi !== null && totais.mercado !== null) {
-      blocos.push(
-        `Se o mesmo dinheiro tivesse ficado no CDI: ${reais(totais.noCdi)} (hoje: ${reais(totais.mercado)})`,
-      );
-    }
-    blocos.push('só preço; não inclui dividendos nem imposto');
+    const rentabilidades = lotes.map((lote) => lote.rentabilidade).filter((valor) => valor !== null);
+    linhas.push({
+      ticker,
+      quantidade: totais.quantidade,
+      aplicado: totais.investido === null ? '–' : reais(totais.investido),
+      hoje: totais.mercado === null ? '–' : reais(totais.mercado),
+      resultado: totais.rentabilidade === null ? '–' : formatarPercentual(totais.rentabilidade),
+      nivel: nivelDeResultado(totais.rentabilidade),
+      fracao: patrimonio && totais.mercado !== null ? totais.mercado / patrimonio : null,
+      divergem: rentabilidades.length > 1 && Math.max(...rentabilidades) - Math.min(...rentabilidades) > 0.05,
+      fraseCdi:
+        totais.noCdi !== null && totais.mercado !== null
+          ? `Se o mesmo dinheiro tivesse ficado no CDI: ${reais(totais.noCdi)} (hoje: ${reais(totais.mercado)})`
+          : null,
+      lotes: lotes.map((lote) => ({
+        quantidade: formatarNumero(lote.quantidade, 0),
+        aplicado: lote.investido === null ? '–' : reais(lote.investido),
+        hoje: lote.mercado === null ? '–' : reais(lote.mercado),
+        resultado: lote.rentabilidade === null ? '–' : formatarPercentual(lote.rentabilidade),
+        nivel: lote.nivel,
+      })),
+    });
   }
-  return blocos.join('\n');
+  return { linhas, pendencias };
 }
 
-export function blocoCarteira(posicoes) {
-  const pendencias = new Set();
-  if (!posicoes.length) return { texto: 'CARTEIRA\nnenhuma posição em carteira.json', pendencias };
-  const partes = ['CARTEIRA'];
-  for (const [ticker, lotes] of agruparPorTicker(posicoes)) {
-    partes.push(tabelaDoTicker(ticker, lotes, pendencias));
+export function blocoCarteira(posicoes, { patrimonio = null } = {}) {
+  const { linhas, pendencias } = linhasDaCarteira(posicoes, { patrimonio });
+  if (!linhas.length) return { texto: 'CARTEIRA\nnenhuma posição em carteira.json', pendencias };
+
+  const comFracao = linhas.some((linha) => linha.fracao !== null);
+  const cabecalho = ['Ticker', 'Aplicado', 'Hoje', 'Resultado', ...(comFracao ? ['% do patrimônio'] : [])];
+  const corpo = [cabecalho];
+  for (const linha of linhas) {
+    corpo.push([
+      linha.ticker,
+      linha.aplicado,
+      linha.hoje,
+      `${linha.resultado} ${linha.nivel?.emoji ?? ''}`.trim(),
+      ...(comFracao ? [linha.fracao === null ? '–' : formatarPercentual(linha.fracao, 1)] : []),
+    ]);
   }
+
+  const partes = ['CARTEIRA', tabela(corpo, { colunas: cabecalho.map((_, i) => (i === 0 ? 'esq' : 'dir')) })];
+  for (const linha of linhas) {
+    if (linha.fraseCdi) partes.push(linha.fraseCdi);
+    if (linha.divergem) {
+      partes.push(`lotes de ${linha.ticker}:`);
+      partes.push(
+        tabela(
+          [
+            ['Qtd', 'Aplicado', 'Hoje', 'Resultado'],
+            ...linha.lotes.map((lote) => [
+              lote.quantidade,
+              lote.aplicado,
+              lote.hoje,
+              `${lote.resultado} ${lote.nivel?.emoji ?? ''}`.trim(),
+            ]),
+          ],
+          { colunas: ['dir', 'dir', 'dir', 'dir'] },
+        ),
+      );
+    }
+  }
+  partes.push('só preço; não inclui dividendos nem imposto');
   return { texto: partes.join('\n'), pendencias };
 }
 
@@ -324,12 +330,139 @@ export function nivelDoCdi(percentualDoCdi, taxaCDI) {
   return NIVEIS[4]; // 🔴 bem abaixo
 }
 
+// ---- números do topo ----
+
+export function totalDaReserva(reserva) {
+  const detalhe = Array.isArray(reserva?.detalhe) ? reserva.detalhe : [];
+  return detalhe.length
+    ? detalhe.reduce((total, item) => total + (Number(item.saldo) || 0), 0)
+    : Number(reserva?.atual) || 0;
+}
+
+// Quantos meses de custo a reserva cobre (null quando falta dado).
+export function mesesDeReserva({ reserva, custoMensal } = {}) {
+  const custo = Number(custoMensal) || Number(reserva?.custoMensal) || 0;
+  const total = totalDaReserva(reserva);
+  return custo && total ? total / custo : null;
+}
+
+// Onde o dinheiro está hoje (reserva x ações). Os baldes da política entram no Nível 3.
+export function alocacao({ reserva, posicoes = [] } = {}) {
+  const naReserva = totalDaReserva(reserva);
+  const emAcoes = posicoes.reduce((total, posicao) => total + (Number(posicao.mercado) || 0), 0);
+  const total = naReserva + emAcoes;
+  if (!total) return { total: 0, partes: [] };
+  return {
+    total,
+    partes: [
+      { nome: 'Reserva', valor: naReserva },
+      { nome: 'Ações', valor: emAcoes },
+    ]
+      .filter((parte) => parte.valor > 0)
+      .map((parte) => ({ ...parte, fracao: parte.valor / total })),
+  };
+}
+
+// Estimativa da variação do patrimônio na semana: a carteira pelo preço do dia e a reserva
+// no ritmo do CDI. É estimativa — o extrato de verdade não está aqui.
+export function variacaoDaSemana({ painel, posicoes = [], reserva } = {}) {
+  const { total, partes } = alocacao({ reserva, posicoes });
+  if (!total) return null;
+  const comPreco = posicoes.filter((posicao) => typeof posicao.variacaoSemana === 'number' && posicao.mercado);
+  const mercado = comPreco.reduce((soma, posicao) => soma + posicao.mercado, 0);
+  const carteira = mercado
+    ? comPreco.reduce((soma, posicao) => soma + posicao.mercado * posicao.variacaoSemana, 0) / mercado
+    : 0;
+  const cdi = painel?.indicadores?.find((cartao) => cartao.id === 'cdi')?.valor ?? null;
+  const reservaNaSemana = cdi === null ? 0 : (1 + cdi / 100) ** (7 / 252) - 1;
+  const pesoDaCarteira = partes.find((parte) => parte.nome === 'Ações')?.fracao ?? 0;
+  return pesoDaCarteira * carteira + (1 - pesoDaCarteira) * reservaNaSemana;
+}
+
+// A frase do topo: o que a semana fez com o patrimônio e onde a reserva está. Regras, não IA.
+export function fraseResumo(dados = {}) {
+  const frases = [];
+  const variacao = variacaoDaSemana(dados);
+  if (variacao !== null) {
+    frases.push(`Patrimônio ≈ ${seta(variacao)}${formatarPercentual(Math.abs(variacao))} na semana.`);
+  }
+  const meses = mesesDeReserva(dados);
+  if (meses !== null) {
+    const alvo = Number(dados.reserva?.alvoMeses) || 6;
+    const cobertura = `${formatarNumero(meses, 1)} meses de custo`;
+    if (meses >= alvo * 1.5) frases.push(`Reserva segue bem acima da meta (${cobertura}).`);
+    else if (meses >= alvo) frases.push(`Reserva bateu a meta (${cobertura}).`);
+    else frases.push(`Reserva cobre ${cobertura} (meta ${alvo}).`);
+  }
+  return frases.join(' ');
+}
+
+// Até 3 ações para a semana, em ordem de prioridade, mais a pergunta do estudo.
+export function paraEstaSemana(dados = {}) {
+  const itens = [];
+  const custo = Number(dados.custoMensal) || 0;
+  const alvo = Number(dados.reserva?.alvoMeses) || 6;
+  const meses = mesesDeReserva(dados);
+
+  if (meses !== null && meses >= alvo * 1.5 && custo) {
+    const excedente = totalDaReserva(dados.reserva) - alvo * custo;
+    itens.push(`${reais(excedente)} acima da meta de ${alvo} meses — decida o destino e registre no diário.`);
+  }
+
+  for (const item of dados.reserva?.detalhe ?? []) {
+    if (itens.length >= 3) break;
+    const percentual = item.medido?.percentualDoCdi;
+    if (percentual === null || percentual === undefined) continue;
+    const promessa = Number(item.taxaCDI) || null;
+    if (percentual < 0.9 || (promessa !== null && percentual < promessa - 0.02)) {
+      itens.push(`${item.nome} rende ${formatarPercentual(percentual, 0)} do CDI.`);
+    }
+  }
+
+  // Diário e estudo só entram quando o relatório roda na máquina do JV (os arquivos são privados).
+  const caderno = dados.caderno ?? {};
+  if (itens.length < 3 && caderno.decisoesVencidas) {
+    itens.push(`${plural(caderno.decisoesVencidas, 'decisão', 'decisões')} do diário para revisar.`);
+  }
+  if (itens.length < 3 && caderno.decisoesSemTese) {
+    itens.push(`${plural(caderno.decisoesSemTese, 'decisão', 'decisões')} do diário sem tese escrita.`);
+  }
+  if (itens.length < 3 && caderno.respostaDaSemanaVazia) {
+    itens.push('A resposta da semana continua vazia.');
+  }
+
+  return { itens, pergunta: perguntaDaSemana(dados.data) };
+}
+
+// A reserva numa tabela só: onde está, quanto tem, o que rende e quanto isso é do CDI.
+export function linhasDaReserva(reserva) {
+  const pendencias = new Set();
+  const linhas = [];
+  for (const item of reserva?.detalhe ?? []) {
+    const medido = item.medido ?? null;
+    if (!medido && (item.taxaCDI || item.rendimento)) {
+      pendencias.add(`informe dataAporte e rendimento de ${item.nome} para eu medir`);
+    }
+    const percentual = medido?.percentualDoCdi;
+    linhas.push({
+      onde: encurtar(item.nome, 20),
+      saldo: formatarNumero(item.saldo, 2),
+      rende: medido
+        ? formatarPercentual(medido.taxaAnual)
+        : item.taxaCDI
+          ? `${formatarPercentual(item.taxaCDI, 0)} do CDI`
+          : '–',
+      vsCdi: percentual === null || percentual === undefined ? '–' : formatarPercentual(percentual, 0),
+      nivel: medido ? nivelDoCdi(percentual, item.taxaCDI) : null,
+    });
+  }
+  return { linhas, pendencias };
+}
+
 export function resumoReserva(reserva, { custoMensal, alvoMeses = reserva?.alvoMeses ?? 6 } = {}) {
   const pendencias = new Set();
   const custo = Number(custoMensal) || Number(reserva?.custoMensal) || 0;
-  const detalhe = Array.isArray(reserva?.detalhe) ? reserva.detalhe : [];
-  const total = detalhe.reduce((acumulado, item) => acumulado + (Number(item.saldo) || 0), 0);
-  const atual = detalhe.length ? total : Number(reserva?.atual) || 0;
+  const atual = totalDaReserva(reserva);
 
   if (!custo || !atual) {
     pendencias.add('preencha custoMensal e o saldo da reserva em carteira.json');
@@ -353,84 +486,65 @@ export function resumoReserva(reserva, { custoMensal, alvoMeses = reserva?.alvoM
   const notaExcedente = notaDoExcedente({ meses, alvoMeses, atual, custo });
   if (notaExcedente) blocos.push(notaExcedente);
 
-  if (detalhe.length) {
-    const saldos = [['Onde', 'Saldo']];
-    for (const item of detalhe) saldos.push([encurtar(item.nome, 20), formatarNumero(item.saldo, 2)]);
-    blocos.push(tabela(saldos, { colunas: ['esq', 'dir'] }));
-
-    const medidos = detalhe.filter((item) => item.medido);
-    const prometidos = detalhe.filter((item) => !item.medido && item.taxaCDI);
-
-    for (const item of detalhe) {
-      if (!item.medido && (item.taxaCDI || item.rendimento)) {
-        pendencias.add(`informe dataAporte e rendimento de ${item.nome} para eu medir`);
-      }
-    }
-    if (medidos.length) {
-      const linhas = [['Onde', 'Taxa a.a.', '% do CDI']];
-      for (const item of medidos) {
-        const nivel = nivelDoCdi(item.medido.percentualDoCdi, item.taxaCDI);
-        linhas.push([
-          encurtar(item.nome, 20),
-          formatarPercentual(item.medido.taxaAnual),
-          item.medido.percentualDoCdi === null
-            ? '–'
-            : `${formatarPercentual(item.medido.percentualDoCdi, 0)} ${nivel?.emoji ?? ''}`.trim(),
-        ]);
-      }
-      blocos.push(tabela(linhas, { colunas: ['esq', 'dir', 'dir'] }));
-    }
-
-    if (prometidos.length) {
-      const linhas = [['Onde', 'Taxa']];
-      for (const item of prometidos) {
-        linhas.push([encurtar(item.nome, 20), `${formatarPercentual(item.taxaCDI, 0)} do CDI`]);
-      }
-      blocos.push(tabela(linhas, { colunas: ['esq', 'dir'] }));
-    }
+  const { linhas, pendencias: faltando } = linhasDaReserva(reserva);
+  for (const item of faltando) pendencias.add(item);
+  if (linhas.length) {
+    blocos.push(
+      tabela(
+        [
+          ['Onde', 'Saldo', 'Rende', 'vs CDI'],
+          ...linhas.map((linha) => [
+            linha.onde,
+            linha.saldo,
+            linha.rende,
+            `${linha.vsCdi} ${linha.nivel?.emoji ?? ''}`.trim(),
+          ]),
+        ],
+        { colunas: ['esq', 'dir', 'dir', 'dir'] },
+      ),
+    );
   }
   return { texto: blocos.join('\n\n'), pendencias };
 }
 
-export function montarRelatorio({
-  data,
-  macro,
-  posicoes = [],
-  reserva,
-  receitaMensal,
-  custoMensal,
-  aporteMensal,
-  avisos = [],
-}) {
-  const blocos = [`📊 Relatório semanal — ${formatarData(data)}`];
-  blocos.push(macro);
+export function montarRelatorio(dados = {}) {
+  const { data, painel, receitaMensal, custoMensal, aporteMensal } = dados;
 
-  const { carteira, blocoReserva, pendencias } = juntarPendencias({
-    posicoes,
-    reserva,
-    custoMensal,
-    avisos,
-  });
-  blocos.push(carteira.texto);
+  const blocos = [
+    `📊 Relatório semanal — ${formatarData(data)} · semana ${numeroDaSemana(data)}\n${fraseResumo(dados)}`,
+  ];
+
+  const semana = paraEstaSemana(dados);
+  const itensDaSemana = semana.itens.map((item, i) => `${i + 1}. ${item}`);
+  itensDaSemana.push(`Pergunta da semana: ${semana.pergunta}`);
+  blocos.push(`PARA ESTA SEMANA\n${itensDaSemana.join('\n')}`);
+
+  const { total, partes } = alocacao(dados);
+  const variacao = variacaoDaSemana(dados);
+  const linhasDoPatrimonio = [['Total', reais(total)]];
+  if (variacao !== null) {
+    linhasDoPatrimonio.push(['Na semana (estimativa)', `${seta(variacao)}${formatarPercentual(Math.abs(variacao))}`]);
+  }
+  blocos.push(`PATRIMÔNIO\n${tabela(linhasDoPatrimonio, { colunas: ['esq', 'dir'] })}`);
+  if (partes.length) {
+    blocos.push(partes.map((parte) => `${parte.nome} ${formatarPercentual(parte.fracao, 1)}`).join(' · '));
+  }
+
+  const { carteira, blocoReserva, pendencias } = juntarPendencias({ ...dados, patrimonio: total });
   blocos.push(blocoReserva.texto);
+  blocos.push(carteira.texto);
 
   if (receitaMensal && custoMensal) {
-    blocos.push(
-      `SOBRA DO MÊS\n${tabela(
-        [
-          ['Receita', reais(receitaMensal)],
-          ['Custo', `-${reais(custoMensal)}`],
-          ['Livre', reais(receitaMensal - custoMensal)],
-        ],
-        { colunas: ['esq', 'dir'] },
-      )}`,
-    );
+    const sobra = receitaMensal - custoMensal;
+    const semDestino = sobra - (Number(aporteMensal) || 0);
+    const pedacos = [`Sobra ${reais(sobra)}`];
+    if (aporteMensal) pedacos.push(`aporte programado ${reais(aporteMensal)}`);
+    pedacos.push(semDestino > 0 ? `sobram ${reais(semDestino)} sem destino` : 'nada sobrando sem destino');
+    blocos.push(`SOBRA DO MÊS\n${pedacos.join(' · ')}`);
   }
-  if (aporteMensal) blocos.push(`APORTE\nprogramado  ${reais(aporteMensal)} por mês`);
 
-  blocos.push(`PERGUNTA DA SEMANA (${numeroDaSemana(data)})\n${perguntaDaSemana(data)}`);
+  blocos.push(resumoMacro(painel));
   blocos.push(`LEGENDA: ${legendaNiveis()}`);
-
   if (pendencias.size) {
     blocos.push(`PENDÊNCIAS\n${[...pendencias].map((item) => `- ${item}`).join('\n')}`);
   }
@@ -439,8 +553,8 @@ export function montarRelatorio({
 }
 
 // Carteira e reserva mais as pendências das duas: texto e HTML partem daqui.
-export function juntarPendencias({ posicoes = [], reserva, custoMensal, avisos = [] }) {
-  const carteira = blocoCarteira(posicoes);
+export function juntarPendencias({ posicoes = [], reserva, custoMensal, avisos = [], patrimonio = null }) {
+  const carteira = blocoCarteira(posicoes, { patrimonio });
   const blocoReserva = resumoReserva(reserva, { custoMensal });
   const pendencias = new Set([...carteira.pendencias, ...blocoReserva.pendencias, ...avisos]);
   return { carteira, blocoReserva, pendencias };

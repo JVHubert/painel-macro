@@ -85,9 +85,8 @@ test('html monta a página inteira com a paleta', () => {
 
 test('cores viram classe em vez de emoji', () => {
   const html = montar();
-  assert.match(html, /class="dir bom">5,00%/);
   assert.match(html, /class="dir ruim">-10,00%/);
-  assert.match(html, /class="dir muito-ruim">−45,0 p\.p\./);
+  assert.match(html, /class="dir bom">5,00%/);
   assert.match(html, /class="dir ruim">80%/); // abaixo do CDI: mostarda, não vermelho
   assert.match(html, /class="dir ruim">4,3 meses/);
   assert.ok(!html.includes('🟢') && !html.includes('🔴'));
@@ -100,15 +99,12 @@ test('números do relatório aparecem formatados', () => {
   const html = montar();
   assert.match(html, /R\$ 700,00/);
   assert.match(html, /R\$ 630,00/);
-  assert.match(html, /R\$ 850,00/);
   assert.match(html, /Se o mesmo dinheiro tivesse ficado no CDI: R\$ 850,00 \(hoje: R\$ 630,00\)/);
-  assert.ok(!html.includes('<td>soma</td>'), 'a tabela do CDI não mistura R$ com %');
   assert.match(html, /só preço; não inclui dividendos nem imposto/);
-  assert.ok(!/class="dir (bom|ruim|neutro)">-0,45%/.test(html), 'o câmbio da semana não recebe cor');
-  assert.match(html, /−45,0 p\.p\./);
   assert.match(html, /R\$ 17\.000,00/);
   assert.match(html, /4,3 meses de custo \(meta 6\)/);
   assert.match(html, /R\$ 3\.000,00/);
+  assert.ok(!/class="dir (bom|ruim|neutro|muito-bom|muito-ruim)">-0,45%/.test(html), 'o câmbio da semana não recebe cor');
   assert.ok(!html.includes('NaN') && !html.includes('undefined'));
 });
 

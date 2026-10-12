@@ -1,29 +1,24 @@
 // Versão em HTML do relatório: é ela que vira imagem colorida, porque o Telegram não
 // aceita texto colorido em mensagem. Os números são os mesmos do texto — muda a roupa.
-import { formatarData, formatarNumero, formatarPercentual, nivelDeResultado } from './indicadores.js';
+import { formatarData, formatarNumero, formatarPercentual } from './indicadores.js';
 import {
-  agruparPorTicker,
+  alocacao,
   dadosMacro,
+  fraseResumo,
   juntarPendencias,
+  linhasDaCarteira,
+  linhasDaReserva,
   nivelDaReserva,
-  nivelDoCdi,
   notaDoExcedente,
   numeroDaSemana,
-  perguntaDaSemana,
-  totaisDoTicker,
+  paraEstaSemana,
+  totalDaReserva,
+  variacaoDaSemana,
 } from './relatorio.js';
 
 const reais = (valor) => `R$ ${formatarNumero(valor, 2)}`;
 
-const classe = (fracao) => {
-  const nivel = nivelDeResultado(fracao);
-  return nivel ? ` class="${nivel.classe}"` : '';
-};
-
-const td = (texto, fracao = null) => {
-  const nivel = nivelDeResultado(fracao);
-  return `<td class="dir${nivel ? ` ${nivel.classe}` : ''}">${texto}</td>`;
-};
+const tdNivel = (texto, nivel) => `<td class="dir${nivel ? ` ${nivel.classe}` : ''}">${texto}</td>`;
 
 const CSS = `
 :root {
@@ -44,26 +39,26 @@ body {
   background: var(--fundo);
   color: var(--texto);
   font-family: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
-  font-size: 17px;
-  line-height: 1.4;
-  padding: 30px;
+  font-size: 16px;
+  line-height: 1.35;
+  padding: 22px;
 }
-header { margin-bottom: 22px; }
-h1 { font-size: 30px; }
+header { margin-bottom: 16px; }
+h1 { font-size: 24px; }
 header p { color: var(--apagado); font-size: 15px; margin-top: 4px; }
 section {
   background: var(--cartao);
   border: 1px solid var(--linha);
   border-radius: 14px;
-  padding: 18px 20px;
-  margin-bottom: 16px;
+  padding: 14px 16px;
+  margin-bottom: 11px;
 }
 h2 {
   font-size: 14px;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--apagado);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 h3 { font-size: 18px; margin: 14px 0 8px; }
 h3:first-child { margin-top: 0; }
@@ -76,16 +71,23 @@ th {
   padding: 0 0 6px;
 }
 th.dir, td.dir { text-align: right; }
-td { padding: 5px 0; }
+td { padding: 3px 0; }
 tr.totais td { border-top: 1px solid var(--linha); padding-top: 9px; font-weight: 600; }
 .muito-bom { color: var(--muito-bom); }
 .bom { color: var(--bom); }
 .neutro { color: var(--neutro); }
 .ruim { color: var(--ruim); }
 .muito-ruim { color: var(--muito-ruim); }
-.nota { color: var(--apagado); font-size: 14px; margin-top: 12px; }
-.pergunta { font-size: 19px; line-height: 1.5; }
-.legenda { display: flex; flex-wrap: wrap; gap: 16px; color: var(--apagado); font-size: 14px; }
+.nota { color: var(--apagado); font-size: 13px; margin-top: 10px; }
+.pergunta { font-size: 17px; line-height: 1.45; }
+.item { margin-top: 6px; }
+header .resumo { color: var(--texto); font-size: 16px; margin-top: 8px; }
+.barra { display: flex; height: 20px; margin-top: 10px; border-radius: 6px; overflow: hidden; background: var(--linha); }
+.barra .parte { height: 100%; }
+.parte-0 { background: #33405a; }
+.parte-1 { background: #8b93a1; }
+footer { margin-top: 8px; }
+.legenda { display: flex; flex-wrap: wrap; gap: 16px; color: var(--apagado); font-size: 13px; }
 .pendencia { color: var(--ruim); font-size: 15px; }
 .pendencia li { margin-top: 4px; margin-left: 18px; }
 `;
@@ -114,77 +116,75 @@ function macroHtml(painel) {
   return secao('Macro', `${tabelaHtml(['Indicador', 'Valor', 'Semana'], corpo)}<p class="nota">${notas.join(' · ')}</p>`);
 }
 
-function carteiraHtml(posicoes) {
-  if (!posicoes.length) return secao('Carteira', '<p class="nota">nenhuma posição em carteira.json</p>');
+function paraEstaSemanaHtml(dados) {
+  const { itens, pergunta } = paraEstaSemana(dados);
+  const lista = itens.map((item) => `<p class="item">${item}</p>`).join('');
+  return secao('Para esta semana', `${lista}<p class="pergunta">${pergunta}</p>`);
+}
 
-  const partes = [];
-  for (const [ticker, lotes] of agruparPorTicker(posicoes)) {
-    const totais = totaisDoTicker(lotes);
-    const corpo = lotes.map(
-      (lote) =>
-        `<tr><td class="dir">${formatarNumero(lote.quantidade, 0)}</td><td class="dir">${
-          lote.investido === null ? '–' : reais(lote.investido)
-        }</td><td class="dir">${lote.mercado === null ? '–' : reais(lote.mercado)}</td>${td(
-          lote.rentabilidade === null ? '–' : formatarPercentual(lote.rentabilidade),
-          lote.rentabilidade,
-        )}</tr>`,
+function patrimonioHtml(dados) {
+  const { total, partes } = alocacao(dados);
+  const variacao = variacaoDaSemana(dados);
+  const linhas = [`<tr><td>Total</td><td class="dir">${reais(total)}</td></tr>`];
+  if (variacao !== null) {
+    linhas.push(
+      `<tr><td>Na semana (estimativa)</td><td class="dir">${variacao >= 0 ? '+' : '−'}${formatarPercentual(
+        Math.abs(variacao),
+      )}</td></tr>`,
     );
-    if (lotes.length > 1) {
-      corpo.push(
-        `<tr class="totais"><td class="dir">soma</td><td class="dir">${
-          totais.investido === null ? '–' : reais(totais.investido)
-        }</td><td class="dir">${totais.mercado === null ? '–' : reais(totais.mercado)}</td>${td(
-          totais.rentabilidade === null ? '–' : formatarPercentual(totais.rentabilidade),
-          totais.rentabilidade,
-        )}</tr>`,
-      );
-    }
+  }
+  const barra = partes.length
+    ? `<div class="barra">${partes
+        .map((parte, i) => `<div class="parte parte-${i}" style="width:${(parte.fracao * 100).toFixed(1)}%"></div>`)
+        .join('')}</div><p class="nota">${partes
+        .map((parte) => `${parte.nome} ${formatarPercentual(parte.fracao, 1)}`)
+        .join(' · ')}</p>`
+    : '';
+  return secao('Patrimônio', `${tabelaSimples(linhas)}${barra}`);
+}
 
-    const semana = lotes[0]?.variacaoSemana ?? null;
-    const variacao =
-      semana === null
-        ? ''
-        : `<p class="nota">hoje ${formatarPercentual(lotes[0].variacaoDia ?? 0)} · na semana <span${classe(
-            semana,
-          )}>${formatarPercentual(semana)}</span></p>`;
+function carteiraHtml(posicoes, { patrimonio = null } = {}) {
+  const { linhas } = linhasDaCarteira(posicoes, { patrimonio });
+  if (!linhas.length) return secao('Carteira', '<p class="nota">nenhuma posição em carteira.json</p>');
 
-    partes.push(
-      `<h3>${ticker} (${totais.quantidade} ${totais.quantidade === 1 ? 'cota' : 'cotas'})</h3>`,
-      tabelaHtml(['Qtd', 'Aplicado', 'Hoje', 'Resultado'], corpo),
-      variacao,
-    );
+  const comFracao = linhas.some((linha) => linha.fracao !== null);
+  const cabecalho = ['Ticker', 'Aplicado', 'Hoje', 'Resultado', ...(comFracao ? ['% do patrimônio'] : [])];
+  const corpo = linhas.map(
+    (linha) =>
+      `<tr><td>${linha.ticker}</td><td class="dir">${linha.aplicado}</td><td class="dir">${linha.hoje}</td>${tdNivel(
+        linha.resultado,
+        linha.nivel,
+      )}${
+        comFracao ? `<td class="dir">${linha.fracao === null ? '–' : formatarPercentual(linha.fracao, 1)}</td>` : ''
+      }</tr>`,
+  );
 
-    const comCdi = lotes.filter((lote) => lote.cdiNoPeriodo !== null);
-    if (comCdi.length) {
-      const linhasCdi = comCdi.map(
-        (lote) =>
-          `<tr><td>${formatarNumero(lote.quantidade, 0)} ${lote.quantidade === 1 ? 'cota' : 'cotas'}</td><td class="dir">${formatarPercentual(
-            lote.cdiNoPeriodo,
-          )}</td>${td(
-            `${lote.vsCdi >= 0 ? '+' : '−'}${formatarNumero(Math.abs(lote.vsCdi) * 100, 1)} p.p.`,
-            lote.vsCdi,
-          )}</tr>`,
-      );
+  const partes = [tabelaHtml(cabecalho, corpo)];
+  for (const linha of linhas) {
+    if (linha.fraseCdi) partes.push(`<p class="nota">${linha.fraseCdi}</p>`);
+    if (linha.divergem) {
       partes.push(
-        '<p class="nota">Contra o CDI — o que o mesmo dinheiro teria rendido, cada lote desde a sua data:</p>',
-        tabelaHtml(['Lote', 'CDI no período', 'Diferença'], linhasCdi),
+        `<h3>lotes de ${linha.ticker}</h3>`,
+        tabelaHtml(
+          ['Qtd', 'Aplicado', 'Hoje', 'Resultado'],
+          linha.lotes.map(
+            (lote) =>
+              `<tr><td class="dir">${lote.quantidade}</td><td class="dir">${lote.aplicado}</td><td class="dir">${lote.hoje}</td>${tdNivel(
+                lote.resultado,
+                lote.nivel,
+              )}</tr>`,
+          ),
+        ),
       );
-      if (comCdi.length > 1 && totais.noCdi !== null && totais.mercado !== null) {
-        partes.push(
-          `<p class="nota">Se o mesmo dinheiro tivesse ficado no CDI: ${reais(totais.noCdi)} (hoje: ${reais(totais.mercado)})</p>`,
-        );
-      }
-      partes.push('<p class="nota">só preço; não inclui dividendos nem imposto</p>');
     }
   }
+  partes.push('<p class="nota">só preço; não inclui dividendos nem imposto</p>');
   return secao('Carteira', partes.join(''));
 }
 
 function reservaHtml(reserva, custoMensal) {
-  const detalhe = Array.isArray(reserva?.detalhe) ? reserva.detalhe : [];
-  const total = detalhe.reduce((soma, item) => soma + (Number(item.saldo) || 0), 0);
-  const atual = detalhe.length ? total : Number(reserva?.atual) || 0;
   const custo = Number(custoMensal) || Number(reserva?.custoMensal) || 0;
+  const atual = totalDaReserva(reserva);
   if (!custo || !atual) return secao('Reserva', '<p class="nota">sem dado para calcular</p>');
 
   const alvoMeses = reserva?.alvoMeses ?? 6;
@@ -203,50 +203,33 @@ function reservaHtml(reserva, custoMensal) {
   const notaExcedente = notaDoExcedente({ meses, alvoMeses, atual, custo });
   if (notaExcedente) partes.push(`<p class="nota">${notaExcedente}</p>`);
 
-  if (detalhe.length) {
+  const { linhas } = linhasDaReserva(reserva);
+  if (linhas.length) {
     partes.push(
-      '<h3>Saldos</h3>',
       tabelaHtml(
-        ['Onde', 'Saldo'],
-        detalhe.map((item) => `<tr><td>${item.nome}</td><td class="dir">${formatarNumero(item.saldo, 2)}</td></tr>`),
-      ),
-    );
-  }
-
-  const medidos = detalhe.filter((item) => item.medido);
-  if (medidos.length) {
-    partes.push(
-      '<h3>Rendimento medido</h3>',
-      tabelaHtml(
-        ['Onde', 'Taxa a.a.', '% do CDI'],
-        medidos.map((item) => {
-          const nivel = nivelDoCdi(item.medido.percentualDoCdi, item.taxaCDI);
-          return `<tr><td>${item.nome}</td><td class="dir">${formatarPercentual(
-            item.medido.taxaAnual,
-          )}</td><td class="dir${nivel ? ` ${nivel.classe}` : ''}">${formatarPercentual(
-            item.medido.percentualDoCdi,
-            0,
-          )}</td></tr>`;
-        }),
-      ),
-      '<p class="nota">medido desde a data do aporte informada (vale se não houve aporte novo depois)</p>',
-    );
-  }
-
-  const prometidos = detalhe.filter((item) => !item.medido && item.taxaCDI);
-  if (prometidos.length) {
-    partes.push(
-      '<h3>Prometido</h3>',
-      tabelaHtml(
-        ['Onde', 'Taxa'],
-        prometidos.map(
-          (item) => `<tr><td>${item.nome}</td><td class="dir">${formatarPercentual(item.taxaCDI, 0)} do CDI</td></tr>`,
+        ['Onde', 'Saldo', 'Rende', 'vs CDI'],
+        linhas.map(
+          (linha) =>
+            `<tr><td>${linha.onde}</td><td class="dir">${linha.saldo}</td><td class="dir">${linha.rende}</td>${tdNivel(
+              linha.vsCdi,
+              linha.nivel,
+            )}</tr>`,
         ),
       ),
     );
   }
 
   return secao('Reserva', partes.join(''));
+}
+
+function sobraHtml({ receitaMensal, custoMensal, aporteMensal }) {
+  if (!receitaMensal || !custoMensal) return '';
+  const sobra = receitaMensal - custoMensal;
+  const semDestino = sobra - (Number(aporteMensal) || 0);
+  const pedacos = [`Sobra ${reais(sobra)}`];
+  if (aporteMensal) pedacos.push(`aporte programado ${reais(aporteMensal)}`);
+  pedacos.push(semDestino > 0 ? `sobram ${reais(semDestino)} sem destino` : 'nada sobrando sem destino');
+  return secao('Sobra do mês', `<p class="pergunta">${pedacos.join(' · ')}</p>`);
 }
 
 // Na imagem a legenda usa cor de verdade, não emoji.
@@ -262,51 +245,27 @@ function legendaHtml() {
     .join('');
 }
 
-export function montarHtml({
-  data,
-  painel,
-  posicoes = [],
-  reserva,
-  receitaMensal,
-  custoMensal,
-  aporteMensal,
-  avisos = [],
-}) {
-  const { pendencias } = juntarPendencias({ posicoes, reserva, custoMensal, avisos });
+export function montarHtml(dados = {}) {
+  const { data, painel, posicoes = [], reserva, custoMensal } = dados;
+  const { total } = alocacao(dados);
+  const { pendencias } = juntarPendencias({ ...dados, patrimonio: total });
 
   const partes = [
-    `<header><h1>Relatório semanal</h1><p>${formatarData(data)} · semana ${numeroDaSemana(data)}</p></header>`,
-    macroHtml(painel),
-    carteiraHtml(posicoes),
+    `<header><h1>Relatório semanal</h1><p>${formatarData(data)} · semana ${numeroDaSemana(data)}</p><p class="resumo">${fraseResumo(
+      dados,
+    )}</p></header>`,
+    paraEstaSemanaHtml(dados),
+    patrimonioHtml(dados),
     reservaHtml(reserva, custoMensal),
+    carteiraHtml(posicoes, { patrimonio: total }),
+    sobraHtml(dados),
+    macroHtml(painel),
+    `<footer><p class="legenda">${legendaHtml()}</p></footer>`,
   ];
-
-  if (receitaMensal && custoMensal) {
-    partes.push(
-      secao(
-        'Sobra do mês',
-        tabelaSimples([
-          `<tr><td>Receita</td><td class="dir">${reais(receitaMensal)}</td></tr>`,
-          `<tr><td>Custo</td><td class="dir">-${reais(custoMensal)}</td></tr>`,
-          `<tr class="totais"><td>Livre</td><td class="dir">${reais(receitaMensal - custoMensal)}</td></tr>`,
-        ]),
-      ),
-    );
-  }
-
-  if (aporteMensal) partes.push(secao('Aporte', `<p class="pergunta">${reais(aporteMensal)} por mês</p>`));
-
-  partes.push(
-    secao('Pergunta da semana', `<p class="pergunta">${perguntaDaSemana(data)}</p>`),
-    secao('Cores', `<p class="legenda">${legendaHtml()}</p>`),
-  );
 
   if (pendencias.size) {
     partes.push(
-      secao(
-        'Pendências',
-        `<ul class="pendencia">${[...pendencias].map((item) => `<li>${item}</li>`).join('')}</ul>`,
-      ),
+      secao('Pendências', `<ul class="pendencia">${[...pendencias].map((item) => `<li>${item}</li>`).join('')}</ul>`),
     );
   }
 
