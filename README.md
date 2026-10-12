@@ -136,6 +136,9 @@ Sempre que mudar seus números, rode esse comando de novo (o arquivo local conti
 5. **Rodando no GitHub:** crie os secrets `TELEGRAM_TOKEN` e `TELEGRAM_CHAT_ID` em **Settings → Secrets and variables → Actions**.
 6. Rode o workflow "Relatório semanal" à mão uma vez para testar.
 
+Com o mesmo bot você responde o estudo e o diário por lá (`/r` e `/d`, na seção
+"Responder pelo Telegram").
+
 **ntfy** (reserva, sem criar conta): escolha um nome de tópico difícil de adivinhar, instale o app ntfy no celular e assine o tópico; coloque `NTFY_TOPIC` no `.env.local` ou nos secrets. Sem token nenhum, o workflow imprime o relatório no log.
 
 O código tenta Telegram primeiro; se não estiver configurado, usa ntfy; se também não, imprime na tela. Falha de envio não derruba o workflow — o arquivo em `relatorios/` já está salvo.
@@ -209,6 +212,28 @@ domingo, abaixo do "Para esta semana". Ele conta só as contas das últimas 8 se
 (`contas certas 6/8 (75%)`) e soma o diário inteiro (`decisões com tese 2 · revisadas 1`) — é o
 que a formatura cobra.
 
+### Responder pelo Telegram (`npm run telegram`)
+
+Na correria do dia, dá para responder sem abrir o computador. Mande para o seu bot:
+
+```
+/r 1126,83
+/d comprar mais XPET4 | porque o preço caiu e a tese continua | subir até o fim do ano | se o resultado vier pior
+```
+
+- `/r` é a resposta da pergunta da semana, do mesmo jeito que `responder`: se for de conta, o
+  bot já responde "certo (gabarito …)" ou "errado — gabarito …. Dica: …".
+- `/d` cria uma decisão no diário. Os campos vão separados por `|` (título, tese, o que espero,
+  o que provaria que estou errado); o que você deixar de fora fica em branco, e o diário cobra
+  depois. A revisão fica marcada para 90 dias.
+- `/ajuda` mostra isso tudo de novo.
+- Mensagem de outra pessoa é ignorada em silêncio, e o bot responde só no seu chat.
+
+O bot **não fica escutando**: ele olha se chegou algo quando o workflow "Atualizar indicadores"
+roda (duas vezes por dia, 09:10 e 18:10 de Brasília). Se quiser que ele leia na hora, rode
+`npm run telegram` na sua máquina — e depois `npm run enviar-dados`, para o que você respondeu
+no celular não ficar só lá.
+
 Ordem sugerida para os primeiros blocos (um por semana, no ritmo da pergunta que chega):
 
 1. juros compostos e a diferença entre taxa nominal e taxa real
@@ -235,8 +260,9 @@ As ferramentas leem os arquivos pessoais da pasta do projeto; quando a variável
 definida (é o que o workflow faz, apontando para a pasta `privado/`), elas leem de lá. É assim que o
 relatório do GitHub enxerga o seu diário e a sua trilha.
 
-Quando mudar seus dados, atualize os dois lugares: o arquivo local e o repositório privado (ou o
-secret, no caso da carteira). O que está no repositório público é código, indicadores públicos e o
+Quando mudar seus dados, rode `npm run enviar-dados`: ele copia `carteira.json`, o diário e o
+estudo para o repositório privado (que fica clonado em `.privado/`, também fora do git) e avisa
+se nada mudou. O que está no repositório público é código, indicadores públicos e o
 `carteira.example.json` sem número nenhum.
 
 Se um dia colar um token em lugar público (chat, print, issue), revogue no `@BotFather` com `/revoke` e atualize o `.env.local` e o secret — o valor antigo deixa de valer na hora. O mesmo vale para o `DADOS_TOKEN`, que se revoga nas configurações do GitHub.
@@ -260,6 +286,8 @@ npm run relatorio # monta o relatório, salva em relatorios/ e envia (imagem, se
 npm run relatorio -- --seco # igual, mas monta e salva sem enviar nada (para conferir)
 npm run diario    # diário de decisões: o que falta escrever e o que venceu
 npm run estudo    # pergunta da semana, respostas e aproveitamento
+npm run telegram  # lê e responde o que chegou para o bot (/r, /d) e marca como lido
+npm run enviar-dados # manda carteira, diário e estudo para o repositório privado
 npm run contexto  # bloco de contexto para colar no professor de IA (sem número exato)
 npm run chat-id   # descobre o seu chat_id do Telegram (para o .env.local)
 npm run serve     # http://localhost:8080

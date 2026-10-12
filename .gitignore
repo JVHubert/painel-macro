@@ -10,3 +10,10 @@ estudo/respostas.md
 
 # Plano de trabalho com dados pessoais
 PLANO-DEEPSEEK.md
+
+# Cópia de trabalho do repositório privado (o que o npm run enviar-dados usa)
+.privado/
+privado/
+
+# Onde o bot guarda até que mensagem já leu
+telegram.json

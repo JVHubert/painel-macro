@@ -2,32 +2,16 @@
 // Uso:
 //   npm run diario                  → painel (o que falta preencher e o que venceu)
 //   npm run diario -- novo "texto"  → cria o esqueleto de uma decisão nova
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, hojeEmBrasilia } from '../indicadores.js';
-import {
-  CAMPOS_DECISAO,
-  adicionarBloco,
-  criarBloco,
-  dataDeRevisao,
-  lerEntradas,
-  painelDoDiario,
-  situacao,
-} from '../caderno.js';
-import { dadosUrl } from './arquivos.mjs';
+import { lerEntradas, painelDoDiario, situacao } from '../caderno.js';
+import { mensagemDeResposta } from '../comandos.js';
+import { anotarDecisao } from './anotar.mjs';
+import { dadosUrl, lerTexto } from './arquivos.mjs';
 import { serieCdi, variacaoDesde } from './mercado.mjs';
 
 const ARQUIVO = dadosUrl('diario/decisoes.md');
-const PASTA = dadosUrl('diario/');
 const HOJE = hojeEmBrasilia();
 const EXEMPLO = 'diario/decisoes.example.md';
-
-async function ler() {
-  try {
-    return await readFile(ARQUIVO, 'utf8');
-  } catch {
-    return '';
-  }
-}
 
 const [, , comando, ...resto] = process.argv;
 
@@ -37,28 +21,17 @@ if (comando === 'novo') {
     console.error('Diga o que você está decidindo: npm run diario -- novo "comprar mais RENT3"');
     process.exit(1);
   }
-  const bloco = criarBloco({
-    data: HOJE,
-    titulo,
-    campos: {
-      tipo: '',
-      valor: '',
-      tese: '',
-      espero: '',
-      provacao: '',
-      revisarEm: dataDeRevisao(HOJE),
-      revisado: '',
-    },
-    ordem: CAMPOS_DECISAO,
-  });
-  await mkdir(PASTA, { recursive: true });
-  await writeFile(ARQUIVO, adicionarBloco(await ler(), bloco), 'utf8');
-  console.log(`Decisão registrada em diario/decisoes.md:\n\n${bloco}`);
-  console.log('Agora preencha tese, espero e provacao no editor (é o que faz a revisão valer).');
+  const resultado = await anotarDecisao({ titulo, hoje: HOJE });
+  if (resultado.recusada) {
+    console.error(resultado.recusada);
+    process.exit(1);
+  }
+  console.log(`Bloco criado em diario/decisoes.md:\n\n${resultado.bloco}`);
+  console.log(mensagemDeResposta({ tipo: 'decisao', ...resultado }));
   process.exit(0);
 }
 
-const texto = await ler();
+const texto = await lerTexto(ARQUIVO);
 const entradas = lerEntradas(texto);
 const vencidas = entradas.filter((entrada) => situacao(entrada, HOJE).vencida);
 

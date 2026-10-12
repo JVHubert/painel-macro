@@ -5,109 +5,42 @@
 //   npm run estudo -- novo        → cria o bloco desta semana para responder no editor
 //   npm run estudo -- responder 1126,83 → registra a resposta da semana e corrige na hora
 //   npm run estudo -- revisar 1126,83   → o mesmo, para a revisão mais antiga que venceu
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import {
   CAMPOS_RESPOSTA,
   MAXIMO_DE_REVISOES,
   adicionarBloco,
-  corrigirConta,
   criarBloco,
-  definirCampos,
   historicoDeEstudo,
   lerEntradas,
-  lerNumeroBr,
   painelDoEstudo,
   revisoesDaSemana,
   revisoesFeitas,
-  textoDaCorrecao,
 } from '../caderno.js';
 import { hojeEmBrasilia } from '../indicadores.js';
 import { numeroDaSemana } from '../relatorio.js';
 import { perguntaDaSemana, perguntaPorTexto } from '../trilha.js';
-import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
+import { mensagemDeResposta } from '../comandos.js';
+import { anotarResposta, gabaritoDaPergunta } from './anotar.mjs';
+import { dadosUrl, lerTexto } from './arquivos.mjs';
 
 const ARQUIVO = dadosUrl('estudo/respostas.md');
 const PASTA = dadosUrl('estudo/');
 const DIARIO = dadosUrl('diario/decisoes.md');
-const PAINEL = new URL('../dados/indicadores.json', import.meta.url);
 const HOJE = hojeEmBrasilia();
 const SEMANA = String(numeroDaSemana(HOJE));
 const PERGUNTA = perguntaDaSemana(HOJE);
-
-async function ler() {
-  try {
-    return await readFile(ARQUIVO, 'utf8');
-  } catch {
-    return '';
-  }
-}
 
 async function escrever(texto) {
   await mkdir(PASTA, { recursive: true });
   await writeFile(ARQUIVO, texto, 'utf8');
 }
 
-// O gabarito das perguntas de conta pode depender do painel do dia (juro real, CDI).
-async function gabaritoDaPergunta(pergunta) {
-  if (pergunta.tipo !== 'conta') return null;
-  const painel = await lerJson(PAINEL, 'Rode `npm run coletar` primeiro.');
-  const valor = pergunta.gabarito(painel);
-  return Number.isFinite(valor) ? valor : null;
-}
-
 const blocoDaSemana = (texto) =>
   lerEntradas(texto).find((entrada) => entrada.titulo === SEMANA) ?? null;
 
-const blocoDoTitulo = (texto, titulo) =>
-  lerEntradas(texto).find((entrada) => entrada.titulo === titulo) ?? null;
-
-// Grava a resposta de uma pergunta (a da semana ou uma revisão) e devolve a frase da correção.
-async function registrarResposta({ texto, titulo, pergunta, resposta, gabaritoGuardado = null }) {
-  const existente = blocoDoTitulo(texto, titulo);
-  if (existente?.campos.resposta) {
-    console.log(`O bloco "${titulo}" já tem resposta registrada (${existente.campos.resposta}).`);
-    console.log('Para trocar, edite estudo/respostas.md.');
-    process.exit(1);
-  }
-
-  const campos = {
-    pergunta: pergunta.texto,
-    resposta,
-    gabarito: existente?.campos.gabarito ?? '',
-    corrigido: '',
-  };
-  const guardado = gabaritoGuardado ?? lerNumeroBr(existente?.campos.gabarito ?? '');
-  const gabarito =
-    pergunta.tipo === 'conta' ? (guardado ?? (await gabaritoDaPergunta(pergunta))) : null;
-  const correcao = corrigirConta(resposta, gabarito, pergunta.tolerancia);
-
-  if (pergunta.tipo !== 'conta') {
-    console.log(
-      'Resposta guardada. Peça a correção com o PROMPT.md aberto e escreva o resultado em "corrigido:" (certo, parcial ou errado).',
-    );
-  } else if (correcao) {
-    campos.gabarito = gabarito.toFixed(2);
-    campos.corrigido = correcao.certo ? 'certo' : 'errado';
-    console.log(textoDaCorrecao({ certo: correcao.certo, gabarito, dica: pergunta.dica }));
-  } else {
-    console.log(
-      'Resposta guardada, mas não consegui conferir: ' +
-        (gabarito === null
-          ? 'o gabarito não saiu hoje (rode `npm run coletar`).'
-          : 'não entendi o número que você escreveu.'),
-    );
-  }
-
-  const atualizado = definirCampos(texto, { titulo, campos, ordem: CAMPOS_RESPOSTA });
-  await escrever(
-    atualizado ?? adicionarBloco(texto, criarBloco({ data: HOJE, titulo, campos, ordem: CAMPOS_RESPOSTA })),
-  );
-  console.log(`\nRegistrado no bloco "${titulo}" de estudo/respostas.md.`);
-  process.exit(0);
-}
-
 const [, , comando, ...resto] = process.argv;
-const texto = await ler();
+const texto = await lerTexto(ARQUIVO);
 
 if (comando === 'novo') {
   if (blocoDaSemana(texto)) {
@@ -143,7 +76,11 @@ if (comando === 'responder') {
     process.exit(1);
   }
   // A trilha manda: se o bloco foi criado com a pergunta de antes, ela é atualizada aqui.
-  await registrarResposta({ texto, titulo: SEMANA, pergunta: PERGUNTA, resposta });
+  const resultado = await anotarResposta({ titulo: SEMANA, pergunta: PERGUNTA, resposta, hoje: HOJE });
+  console.log(mensagemDeResposta({ tipo: 'resposta', ...resultado }));
+  if (resultado.recusada) process.exit(1);
+  console.log(`\nRegistrado no bloco "${SEMANA}" de estudo/respostas.md.`);
+  process.exit(0);
 }
 
 if (comando === 'revisar') {
@@ -168,13 +105,17 @@ if (comando === 'revisar') {
     process.exit(1);
   }
   console.log(`Revisão: ${revisao.pergunta}`);
-  await registrarResposta({
-    texto,
+  const resultado = await anotarResposta({
     titulo: `${SEMANA} · revisão ${feitas + 1}`,
     pergunta,
     resposta,
     gabaritoGuardado: revisao.gabarito,
+    hoje: HOJE,
   });
+  console.log(mensagemDeResposta({ tipo: 'resposta', ...resultado }));
+  if (resultado.recusada) process.exit(1);
+  console.log(`\nRegistrado no bloco "${SEMANA} · revisão ${feitas + 1}" de estudo/respostas.md.`);
+  process.exit(0);
 }
 
 console.log(

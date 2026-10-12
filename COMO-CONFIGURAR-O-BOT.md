@@ -158,9 +158,37 @@ O `CARTEIRA_JSON` continua valendo como reserva, para o caso de o repositório p
 Get-Content carteira.json -Raw | & "C:\Program Files\GitHub CLI\gh.exe" secret set CARTEIRA_JSON
 ```
 
-O `carteira.example.json` no repositório público é só o modelo, sem número nenhum. **Quando você
-mudar a carteira, o diário ou o estudo aqui no PC, me avise:** eu subo para o repositório privado
-(na próxima parte isso vira um comando).
+O `carteira.example.json` no repositório público é só o modelo, sem número nenhum.
+
+**Quando você mudar a carteira, o diário ou o estudo aqui no PC, rode:**
+
+```powershell
+npm run enviar-dados
+```
+
+Ele copia os três arquivos para o repositório privado e avisa se nada mudou. Se o comando
+reclamar de senha do GitHub, é só rodar de novo: o Windows abre a tela de login e guarda.
+
+## Responder pelo Telegram
+
+Depois disso o bot também serve para você responder de volta, sem abrir o computador:
+
+| Você manda | O que acontece |
+|---|---|
+| `/r 1126,83` | registra a sua resposta da pergunta da semana; se for de conta, você recebe o certo/errado na hora |
+| `/d comprar XPET4 \| a tese \| o que espero \| o que provaria que estou errado` | cria a decisão no diário, com revisão marcada para 90 dias |
+| `/ajuda` | mostra os comandos |
+
+O bot só olha se chegou algo quando o "Atualizar indicadores" roda (09:10 e 18:10 de Brasília).
+Para ele ler na hora, rode na sua máquina:
+
+```powershell
+npm run telegram
+npm run enviar-dados
+```
+
+O segundo comando é o que leva a sua resposta para o repositório privado — sem ele, o relatório de
+domingo não vê o que você respondeu. Quando quem responde é o workflow, esse passo é automático.
 
 ## Problemas comuns
 
@@ -173,6 +201,8 @@ mudar a carteira, o diário ou o estudo aqui no PC, me avise:** eu subo para o r
 | Chega na sua máquina mas não no GitHub | secrets não criados no repositório | Parte 6, `gh secret set` |
 | O workflow não roda no domingo | agendamento desativado por 60 dias sem atividade | Actions → "Relatório semanal" → **Enable workflow** |
 | `Nenhuma mensagem encontrada` no `chat-id` | o `oi` não foi enviado | Parte 2 |
+| Mandei `/r` e o bot não respondeu | ele só olha a caixa de entrada quando o workflow roda | espere a próxima rodada (09:10 ou 18:10) ou rode `npm run telegram` |
+| O bot disse que o bloco já tem resposta | você já respondeu essa semana | troque a resposta no arquivo `estudo/respostas.md` |
 | `403 Proibido` ao buscar cotação | o Yahoo bloqueou temporariamente | roda de novo mais tarde; o relatório segue com os outros dados |
 
 ## Segurança
@@ -180,12 +210,12 @@ mudar a carteira, o diário ou o estudo aqui no PC, me avise:** eu subo para o r
 - O token é a senha do bot. Não cole em chat, print, issue ou código.
 - Se vazar: `/revoke` no @BotFather gera outro na hora — troque no `.env.local` e no secret do GitHub.
 - Quem tem o token pode mandar mensagem em nome do bot, mas **não** entra na sua conta do Telegram nem lê suas conversas.
-- O bot é seu, mas é público no sentido de que qualquer pessoa pode encontrar o seu bot pelo nome e mandar `/start`. Ele não responde nada e não envia nada para ninguém que você não tenha configurado como `chat_id`.
+- O bot é seu, mas é público no sentido de que qualquer pessoa pode encontrar o seu bot pelo nome e mandar `/start`. Ele só responde o `chat_id` que você configurou: mensagem de outra pessoa é ignorada em silêncio (e não entra no seu estudo nem no seu diário).
 
 ## Resumo do que roda sozinho depois disso
 
 | Quando | O que |
 |---|---|
-| todo dia, 09h e 18h | coleta Selic, CDI, IPCA, dólar e publica o painel |
+| todo dia, 09h e 18h | coleta Selic, CDI, IPCA, dólar, publica o painel e lê o que você mandou para o bot |
 | domingo, 18h | chega a imagem do relatório no Telegram (macro + carteira + reserva + pergunta da semana) |
 | a cada merge na `main` | confere os testes e republica o site |
