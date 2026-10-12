@@ -1,11 +1,12 @@
 // Monta o relatório semanal: macro do painel + cotação das posições + reserva + pergunta da semana.
 // Uso: npm run relatorio           (envia pelo canal configurado e salva em relatorios/)
 //      npm run relatorio -- --seco (monta e salva, mas não envia nada)
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
 import { montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { lerEntradas, situacao } from '../caderno.js';
+import { lerJson, lerTexto } from './arquivos.mjs';
 import { renderizar } from './imagem.mjs';
 import { cotacao, serieCdi } from './mercado.mjs';
 import { enviarFoto, enviarSemDerrubar } from './notificar.mjs';
@@ -26,23 +27,6 @@ try {
   process.loadEnvFile(new URL('../.env.local', import.meta.url));
 } catch {
   // Sem arquivo local: no GitHub as variáveis vêm dos secrets.
-}
-
-async function lerJson(url, dica) {
-  try {
-    return JSON.parse(await readFile(url, 'utf8'));
-  } catch (erro) {
-    throw new Error(`${url.pathname} indisponível (${erro.message}). ${dica}`);
-  }
-}
-
-// Diário e estudo são arquivos privados: no GitHub eles não existem e o relatório segue sem eles.
-async function lerTexto(url) {
-  try {
-    return await readFile(url, 'utf8');
-  } catch {
-    return '';
-  }
 }
 
 function resumoDoCaderno(hoje, textoDoDiario, textoDoEstudo) {

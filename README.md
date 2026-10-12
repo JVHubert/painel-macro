@@ -15,6 +15,7 @@ Primeira vez configurando o Telegram? Siga o [COMO-CONFIGURAR-O-BOT.md](COMO-CON
 | `indicadores.js` | contas puras: juros compostos, IPCA em 12 meses, juro real, tabela do imposto de renda, formatação |
 | `relatorio.js` | texto do relatório semanal: semana ISO, resultado por posição, comparação com o CDI |
 | `trilha.js` | o currículo como dado: as perguntas de cada nível, com tipo, gabarito e a prova |
+| `contexto.js` | monta o bloco que você cola no professor de IA: situação em faixas, trilha e diário |
 | `carteira.example.json` | modelo dos seus dados (copie para `carteira.json`, que fica fora do git) |
 | `PROMPT.md` | instruções para o seu professor de IA (colar no Gemini/ChatGPT) |
 | `relatorios/` | histórico do que você recebeu, na sua máquina (fora do git) |
@@ -175,7 +176,8 @@ npm run estudo
 
 A pergunta da semana é a mesma que chega no relatório de domingo. Responda **primeiro sem
 ajuda**, registre em `estudo/respostas.md` e só depois peça a correção com o `PROMPT.md`
-aberto. O painel mostra o aproveitamento das semanas.
+aberto. O painel mostra o aproveitamento das semanas. Antes de abrir a conversa com o
+professor de IA, rode `npm run contexto` e cole o bloco que ele imprime.
 
 Ordem sugerida para os primeiros blocos (um por semana, no ritmo da pergunta que chega):
 
@@ -222,6 +224,7 @@ npm run relatorio # monta o relatório, salva em relatorios/ e envia (imagem, se
 npm run relatorio -- --seco # igual, mas monta e salva sem enviar nada (para conferir)
 npm run diario    # diário de decisões: o que falta escrever e o que venceu
 npm run estudo    # pergunta da semana, respostas e aproveitamento
+npm run contexto  # bloco de contexto para colar no professor de IA (sem número exato)
 npm run chat-id   # descobre o seu chat_id do Telegram (para o .env.local)
 npm run serve     # http://localhost:8080
 npm run publicar  # monta dist/site

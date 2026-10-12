@@ -11,6 +11,7 @@
     "relatorio": "node tools/relatorio.mjs",
     "diario": "node tools/diario.mjs",
     "estudo": "node tools/estudo.mjs",
+    "contexto": "node tools/contexto.mjs",
     "chat-id": "node tools/chat-id.mjs",
     "serve": "node tools/servidor.mjs",
     "publicar": "node tools/publicar.mjs",
