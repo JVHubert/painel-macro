@@ -1,5 +1,5 @@
 {
-  "atualizadoEm": "2026-10-12T01:29:17.870Z",
+  "atualizadoEm": "2026-10-12T03:09:58.876Z",
   "indicadores": [
     {
       "id": "meta-selic",
@@ -7,7 +7,8 @@
       "unidade": "% ao ano",
       "prefixoValor": "",
       "valor": 13.75,
-      "referencia": "2026-11-04",
+      "referencia": "2026-09-17",
+      "rotuloReferencia": "em vigor desde",
       "fonte": "BACEN · SGS 432",
       "variacao": -1.25,
       "rotuloVariacao": "vs. 12 meses atrás",
@@ -363,16 +364,45 @@
     {
       "id": "juro-real",
       "nome": "Juro real",
-      "unidade": "% ao ano",
+      "unidade": "% nos últimos 12 meses",
       "prefixoValor": "",
-      "valor": 8.7724428420487,
-      "referencia": "2026-11-04",
+      "valor": 9.496646355662941,
+      "referencia": "2026-09-01",
       "fonte": "cálculo do painel",
       "variacao": null,
       "rotuloVariacao": "",
       "extra": null,
-      "serie": [],
-      "sobre": "Quanto a renda fixa paga acima da inflação. É esse número que importa para quem poupa."
+      "serie": [
+        {
+          "data": "2026-03-01",
+          "valor": 10.223254346725486
+        },
+        {
+          "data": "2026-04-01",
+          "valor": 9.997669594895854
+        },
+        {
+          "data": "2026-05-01",
+          "valor": 9.576869167135648
+        },
+        {
+          "data": "2026-06-01",
+          "valor": 9.688745973328118
+        },
+        {
+          "data": "2026-07-01",
+          "valor": 9.831345378024992
+        },
+        {
+          "data": "2026-08-01",
+          "valor": 9.98545021406283
+        },
+        {
+          "data": "2026-09-01",
+          "valor": 9.464818553819532
+        }
+      ],
+      "sobre": "O CDI dos últimos 12 meses comparado com o IPCA do mesmo período. É esse número que importa para quem poupa."
     },
     {
       "id": "dolar",
