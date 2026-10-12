@@ -1,5 +1,5 @@
 {
-  "atualizadoEm": "2026-10-12T03:09:58.876Z",
+  "atualizadoEm": "2026-10-12T21:14:25.802Z",
   "indicadores": [
     {
       "id": "meta-selic",
@@ -55,19 +55,15 @@
       "unidade": "% ao ano",
       "prefixoValor": "",
       "valor": 13.649989315282562,
-      "referencia": "2026-10-08",
+      "referencia": "2026-10-09",
       "fonte": "BACEN · SGS 12",
       "variacao": null,
       "rotuloVariacao": "",
       "extra": {
         "rotulo": "acumulado em 12 meses",
-        "percentual": 0.14507343933088301
+        "percentual": 0.1450237361932487
       },
       "serie": [
-        {
-          "data": "2026-08-06",
-          "valor": 0.05166
-        },
         {
           "data": "2026-08-07",
           "valor": 0.05166
@@ -243,6 +239,10 @@
         {
           "data": "2026-10-08",
           "valor": 0.050788
+        },
+        {
+          "data": "2026-10-09",
+          "valor": 0.050788
         }
       ],
       "sobre": "Taxa que os bancos cobram entre si. É o que rende a maior parte dos CDBs e a poupança do seu banco, quase sempre colada na Selic."
@@ -366,7 +366,7 @@
       "nome": "Juro real",
       "unidade": "% nos últimos 12 meses",
       "prefixoValor": "",
-      "valor": 9.496646355662941,
+      "valor": 9.491893536588304,
       "referencia": "2026-09-01",
       "fonte": "cálculo do painel",
       "variacao": null,
@@ -410,7 +410,7 @@
       "unidade": "",
       "prefixoValor": "R$ ",
       "valor": 4.9892,
-      "referencia": "2026-10-08",
+      "referencia": "2026-10-09",
       "fonte": "BACEN · SGS 1",
       "variacao": -0.00452922045531623,
       "rotuloVariacao": "no dia",
