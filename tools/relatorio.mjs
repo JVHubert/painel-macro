@@ -116,7 +116,6 @@ function medirReserva(reserva) {
     }
     detalhe.push({ ...item, medido: medido ? { ...medido, percentualDoCdi } : null });
   }
-  console.log(`reserva medida: ${detalhe.length} itens`);
   return detalhe.length ? { ...reserva, detalhe } : reserva;
 }
 
