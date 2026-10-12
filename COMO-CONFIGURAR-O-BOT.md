@@ -138,11 +138,15 @@ token na sua conta):
 3. **Repository access:** marque *Only select repositories* e escolha **painel-macro-dados**.
 4. **Permissions → Repository permissions → Contents:** escolha **Read and write**.
 5. **Generate token** e copie o valor (começa com `github_pat_` e aparece uma única vez).
-6. Na pasta do projeto, rode o comando abaixo, cole o token quando ele pedir e aperte Enter:
+6. Na pasta do projeto, rode o comando abaixo, cole o token quando ele pedir e aperte Enter (nada
+   aparece na tela enquanto você cola — é de propósito):
 
 ```powershell
-& "C:\Program Files\GitHub CLI\gh.exe" secret set DADOS_TOKEN
+& "C:\Program Files\GitHub CLI\gh.exe" secret set DADOS_TOKEN --repo JVHubert/painel-macro
 ```
+
+   O mesmo pelo site: https://github.com/JVHubert/painel-macro/settings/secrets/actions →
+   **New repository secret** → Name `DADOS_TOKEN` → Secret: o token → **Add secret**.
 
 Feito isso, o relatório de domingo passa a ler o diário e a trilha do repositório privado — é assim
 que o placar e os itens do diário aparecem na imagem. Sem o token, o relatório continua saindo,
