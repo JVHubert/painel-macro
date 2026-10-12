@@ -91,7 +91,7 @@ Copie `carteira.example.json` para `carteira.json`. Esse arquivo está no `.giti
 Get-Content carteira.json -Raw | & "C:\Program Files\GitHub CLI\gh.exe" secret set CARTEIRA_JSON
 ```
 
-Sempre que mudar seus números, rode esse comando de novo (o arquivo local continua sendo a sua fonte de verdade).
+Sempre que mudar seus números, rode esse comando de novo (o arquivo local continua sendo a sua fonte de verdade). Sem esse secret, o relatório de domingo **para com erro** — é de propósito: sem carteira, ele sairia vazio.
 
 ```json
 {
@@ -230,7 +230,7 @@ npm run icones    # refaz os PNGs do ícone
 
 No Windows, se o PowerShell bloquear os scripts do npm, use `npm.cmd test` (ou `node --test`).
 
-Ao publicar uma mudança, aumente `VERSAO` em `sw.js` para os celulares baixarem a versão nova.
+A versão do `sw.js` publicado é calculada na hora de publicar, a partir do conteúdo dos arquivos do site (`tools/versao.mjs`): não precisa aumentar nada à mão — mudou um arquivo, o celular baixa a versão nova na próxima abertura.
 
 ## Publicar
 
