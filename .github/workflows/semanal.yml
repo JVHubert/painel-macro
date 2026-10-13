@@ -68,3 +68,22 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: node tools/relatorio.mjs
+
+      # O relatório grava o histórico do patrimônio e, quando um marco é batido, o mural do jogo.
+      # Esses arquivos vivem no repositório privado: sem este passo, a escrita desaparece quando
+      # o job termina — e o histórico começaria vazio todo domingo, sem nunca confirmar marco.
+      - name: Guardar no repositório privado
+        if: hashFiles('privado/carteira.json') != ''
+        run: |
+          set -euo pipefail
+          cd privado
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "nada novo no repositório privado"
+            exit 0
+          fi
+          git commit -m "dados: relatório de $(date -u +%F)"
+          git pull --rebase
+          git push
