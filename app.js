@@ -110,6 +110,28 @@ function renderizarSimulacao() {
     : '';
 }
 
+// As fontes saem do campo `fonte` de cada cartão: se o dólar veio do BCB num dia, é o BCB que aparece.
+// O nome da fonte entra uma vez só; as séries dela vêm entre parênteses.
+function linhaDeFontes(fontes = []) {
+  const porFonte = new Map();
+  for (const fonte of fontes) {
+    const [nome, ...series] = String(fonte).split(' · ');
+    if (!porFonte.has(nome)) porFonte.set(nome, new Set());
+    for (const serie of series) porFonte.get(nome).add(serie);
+  }
+  return [...porFonte.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, 'pt-BR'))
+    .map(([nome, series]) => (series.size ? `${nome} (${[...series].sort().join(', ')})` : nome))
+    .join(' · ');
+}
+
+function mostrarFontes() {
+  const fontes = (painel?.indicadores ?? []).map((cartao) => cartao.fonte).filter(Boolean);
+  $('fontes').textContent = fontes.length
+    ? `Fontes: ${linhaDeFontes(fontes)}. Série atualizada por GitHub Actions.`
+    : '';
+}
+
 // Esta página é pública: ela não sabe em que nível da trilha você está, então não mostra a pergunta
 // da semana (isso é do relatório e do `npm run estudo`).
 async function carregar() {
@@ -121,6 +143,7 @@ async function carregar() {
     resumoEl.textContent = resumoDoPainel(painel);
     renderizarCartoes();
     renderizarSimulacao();
+    mostrarFontes();
     const quando = new Date(painel.atualizadoEm);
     situacaoEl.textContent = `Coletado em ${quando.toLocaleString('pt-BR', {
       dateStyle: 'short',

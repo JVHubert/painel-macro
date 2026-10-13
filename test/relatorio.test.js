@@ -13,11 +13,20 @@ import {
   nivelDoCdi,
   numeroDaSemana,
   paraEstaSemana,
+  reaisCurto,
   resumoMacro,
   resumoPosicao,
   resumoReserva,
   rotuloDoMarco,
   tabela,
+  tituloDaCarteira,
+  tituloDaReserva,
+  tituloDaSemana,
+  tituloDasPendencias,
+  tituloDoJogo,
+  tituloDoMacro,
+  tituloDoPatrimonio,
+  tituloDoSobra,
   variacaoPeriodo,
 } from '../relatorio.js';
 
@@ -145,8 +154,9 @@ test('macro sai em tabela alinhada', () => {
   const bloco = resumoMacro(PAINEL);
   const linhas = bloco.split('\n');
 
-  assert.equal(linhas[0], 'MACRO');
-  assert.equal(linhas[1], `Indicador${' '.repeat(7)}Valor  Semana`);
+  // Sem rótulo: quem monta o relatório põe o título-afirmação acima da tabela.
+  assert.equal(linhas[0], `Indicador${' '.repeat(7)}Valor  Semana`);
+  assert.equal(linhas[1], `Meta Selic${' '.repeat(5)}13,75%  =0,00 p.p.`);
   assert.match(bloco, /Meta Selic\s+13,75%\s+=0,00 p\.p\./);
   assert.match(bloco, /CDI\s+13,65%\s+=0,00 p\.p\./);
   assert.match(bloco, /IPCA \(12m\)\s+4,58%/);
@@ -189,7 +199,7 @@ test('posição sem preço médio vira pendência, não número inventado', () =
     reserva: { atual: 0 },
   });
   assert.match(texto, /RENT3\s+–\s+R\$ 545,10/);
-  assert.match(texto, /PENDÊNCIAS[\s\S]*preencha o precoMedio de RENT3/);
+  assert.match(texto, /pendências para resolver[\s\S]*preencha o precoMedio de RENT3/);
   assert.ok(!texto.includes('NaN'));
 });
 
@@ -230,7 +240,7 @@ test('reserva calcula cobertura e usa a cor do progresso', () => {
   assert.match(cheia, /9,0 meses de custo \(meta 6\) ⚪/);
   assert.match(
     cheia,
-    /R\$ 12\.000,00 acima da meta de 6 meses — dinheiro que pode ir para prazo maior\. Registre a decisão no diário\./,
+    /R\$ 12\.000,00 acima da meta de 6 meses — esse dinheiro pode ir para prazo maior\./,
   );
   assert.ok(!vazia.includes('acima da meta'));
 
@@ -413,13 +423,22 @@ test('relatório completo monta todos os blocos', () => {
 
   assert.match(texto, /📊 Relatório semanal — 11\/10\/2026 · semana 41/);
   assert.match(texto, /Patrimônio ≈ \+/);
-  const blocos = ['PARA ESTA SEMANA', 'PATRIMÔNIO', 'RESERVA', 'CARTEIRA', 'SOBRA DO MÊS', 'MACRO', 'LEGENDA:', 'PENDÊNCIAS'];
-  for (const bloco of blocos) {
-    assert.ok(texto.includes(bloco), `faltou o bloco ${bloco}`);
+  // Os títulos são afirmações sobre cada seção, na ordem conclusão → detalhes → rodapé.
+  const titulos = [
+    /coisas? para fazer nesta semana|Nada pendente nesta semana/,
+    /Seu patrimônio (subiu|caiu|ficou parado|é de)/,
+    /Sua reserva (cobre|bateu|ainda)/,
+    /Nenhum papel em carteira|RENT3 (subiu|caiu)/,
+    /Sobram .* sem destino neste mês/,
+    /O juro real está em/,
+    /LEGENDA: /,
+  ];
+  let anterior = -1;
+  for (const titulo of titulos) {
+    const posicao = texto.search(titulo);
+    assert.ok(posicao > anterior, `título ausente ou fora de ordem: ${titulo}`);
+    anterior = posicao;
   }
-  // "Para esta semana" vem logo depois do cabeçalho.
-  const ordem = blocos.map((bloco) => texto.indexOf(bloco));
-  assert.deepEqual(ordem, [...ordem].sort((a, b) => a - b), 'os blocos estão fora de ordem');
   assert.match(texto, /Sobra R\$ 3\.000,00 · aporte programado R\$ 500,00 · sobram R\$ 2\.500,00 sem destino/);
   assert.match(texto, /- teste de aviso/);
 });
@@ -450,7 +469,7 @@ test('o placar do estudo aparece abaixo do Para esta semana', () => {
   });
   assert.match(
     comPlacar,
-    /PARA ESTA SEMANA[\s\S]*\nNível 1 · contas certas 1\/2 \(50%\) · decisões com tese 1 · revisadas 0\n\nPATRIMÔNIO/,
+    /Nível 1 · contas certas 1\/2 \(50%\) · decisões com tese 1 · revisadas 0\n\nSeu patrimônio/,
   );
 
   const semCaderno = montarRelatorio(dados);
@@ -476,13 +495,13 @@ test('o cartão do jogo entra logo depois do Para esta semana', () => {
     jogo,
   });
 
-  assert.match(texto, /JOGO DOS MARCOS\n\[█+░+\] 83%/);
+  assert.match(texto, /Faltam R\$ 4,3 mil para o marco de R\$ 25 mil\n\[█+░+\] 83%/);
   assert.match(texto, /Próximo marco: R\$ 25 mil · faltam R\$ 4\.262,49 · ~2 meses no ritmo atual/);
   assert.match(texto, /Prêmio: até R\$ 5\.000,00 → Exemplo de prêmio · nesse trecho, ~30% virá dos juros/);
-  assert.match(texto, /PARA ESTA SEMANA[\s\S]*JOGO DOS MARCOS[\s\S]*PATRIMÔNIO/);
+  assert.match(texto, /Faltam R\$ 4,3 mil[\s\S]*Seu patrimônio/);
 
   const semJogo = montarRelatorio({ data: '2026-10-11', painel: PAINEL, posicoes: [], reserva: { atual: 0 } });
-  assert.ok(!semJogo.includes('JOGO DOS MARCOS'), 'sem jogo, o cartão não entra');
+  assert.ok(!semJogo.includes('para o marco de'), 'sem jogo, o cartão não entra');
 });
 
 test('o cartão cobra o prêmio e avisa o primeiro domingo do histórico', () => {
@@ -537,7 +556,7 @@ test('marco batido vira o primeiro cartão, com o prêmio e o prazo', () => {
     texto,
     /MARCO BATIDO\nVocê passou de R\$ 25 mil além da reserva! Prêmio liberado: até R\$ 5\.000,00 — Exemplo de prêmio · compre até 10\/12\/2026\./,
   );
-  assert.match(texto, /MARCO BATIDO[\s\S]*PARA ESTA SEMANA/);
+  assert.match(texto, /MARCO BATIDO[\s\S]*Nada pendente nesta semana/);
 });
 
 test('quando a lista acaba, o cartão diz que é hora de escolher os próximos', () => {
@@ -552,5 +571,93 @@ test('o marco aparece na língua de quem lê', () => {
   assert.equal(rotuloDoMarco(1500000), 'R$ 1,5 milhão');
   assert.equal(rotuloDoMarco(2000000), 'R$ 2 milhões');
   assert.equal(rotuloDoMarco(500), 'R$ 500,00');
+});
+
+test('os títulos das seções são afirmações tiradas dos dados', () => {
+  assert.equal(tituloDaSemana([]), 'Nada pendente nesta semana');
+  assert.equal(tituloDaSemana(['a']), 'Uma coisa para fazer nesta semana');
+  assert.equal(tituloDaSemana(['a', 'b', 'c']), '3 coisas para fazer nesta semana');
+
+  const comSaldo = (saldo) => ({ reserva: { alvoMeses: 6, detalhe: [{ nome: 'Caixinha X', saldo }] }, custoMensal: 2000 });
+  assert.equal(tituloDaReserva(comSaldo(29400)), 'Sua reserva cobre 14,7 meses — 8,7 a mais que a meta');
+  assert.equal(tituloDaReserva(comSaldo(12000)), 'Sua reserva bateu a meta: cobre 6,0 meses');
+  assert.equal(tituloDaReserva(comSaldo(4000)), 'Sua reserva cobre 2,0 dos 6 meses que você quer');
+  assert.equal(tituloDaReserva({ reserva: {} }), 'Ainda não dá para medir a reserva');
+
+  assert.equal(tituloDoJogo({ proximoMarco: 25000, falta: 4262.49 }), 'Faltam R$ 4,3 mil para o marco de R$ 25 mil');
+  assert.equal(tituloDoJogo({ proximoMarco: 25000, falta: 0 }), 'Você bateu o marco de R$ 25 mil — falta a confirmação de mais um domingo');
+  assert.equal(tituloDoJogo({ proximoMarco: null }), 'Você passou do último marco da lista');
+  assert.equal(tituloDoJogo(null), null);
+
+  assert.equal(
+    tituloDoSobra({ receitaMensal: 7000, custoMensal: 4000, aporteMensal: 2350 }),
+    'Sobram R$ 650,00 sem destino neste mês',
+  );
+  assert.equal(tituloDoSobra({ receitaMensal: 7000, custoMensal: 4000, aporteMensal: 3000 }), 'Cada real da sobra do mês já tem destino');
+  assert.equal(tituloDoSobra({}), null);
+
+  assert.equal(tituloDoMacro(PAINEL), 'O juro real está em 8,77% ao ano');
+  assert.equal(tituloDoMacro({ indicadores: [] }), 'Sem indicador de juro real hoje');
+
+  assert.equal(tituloDasPendencias(new Set()), null);
+  assert.equal(tituloDasPendencias(new Set(['a'])), 'Uma pendência para resolver');
+  assert.equal(tituloDasPendencias(new Set(['a', 'b'])), '2 pendências para resolver');
+
+  assert.equal(tituloDaCarteira([]), 'Nenhum papel em carteira ainda');
+  assert.equal(
+    tituloDaCarteira([{ ticker: 'XPTO3', mercado: 100, rentabilidade: 0.1, vsCdi: -0.05 }]),
+    'XPTO3 subiu 10,00% desde a compra — o CDI rendeu mais no mesmo período',
+  );
+  assert.equal(
+    tituloDaCarteira([{ ticker: 'XPTO3', mercado: 100, rentabilidade: -0.1, vsCdi: 0.05 }]),
+    'XPTO3 caiu 10,00% desde a compra — acima do CDI no mesmo período',
+  );
+
+  assert.equal(reaisCurto(4262.49), 'R$ 4,3 mil');
+  assert.equal(reaisCurto(650.5), 'R$ 650,50');
+  assert.equal(reaisCurto(1200000), 'R$ 1,2 mi');
+});
+
+test('o título do patrimônio diz o que a semana fez com o dinheiro', () => {
+  const comAcoes = {
+    painel: PAINEL,
+    reserva: { detalhe: [{ nome: 'Caixinha X', saldo: 30000 }] },
+    posicoes: [{ ticker: 'XPTO3', mercado: 1000, variacaoSemana: 0.05 }],
+  };
+  const titulo = tituloDoPatrimonio(comAcoes);
+
+  assert.match(titulo, /^Seu patrimônio (subiu|caiu) \d+,\d{2}% na semana$/);
+  assert.equal(tituloDoPatrimonio({ reserva: {} }), 'Sem patrimônio para medir ainda');
+  assert.equal(
+    tituloDoPatrimonio({ reserva: { detalhe: [{ nome: 'Caixinha X', saldo: 1000 }] }, posicoes: [] }),
+    'Seu patrimônio ficou parado na semana',
+  );
+});
+
+test('o excedente da reserva aponta para o jogo dos marcos', () => {
+  const texto = montarRelatorio({
+    data: '2026-10-11',
+    painel: PAINEL,
+    posicoes: [],
+    reserva: { alvoMeses: 6, detalhe: [{ nome: 'Caixinha X', saldo: 29400 }] },
+    custoMensal: 2000,
+  });
+
+  assert.match(texto, /acima da meta de 6 meses[\s\S]*É esse excedente que conta no jogo dos marcos\./);
+});
+
+test('a legenda das cores fecha o relatório, sem separar dois cartões', () => {
+  const texto = montarRelatorio({
+    data: '2026-10-11',
+    painel: PAINEL,
+    posicoes: [resumoPosicao({ ticker: 'RENT3', quantidade: 10, precoMedio: null }, { preco: 54.51 })],
+    reserva: { atual: 0 },
+  });
+
+  assert.match(texto.trimEnd(), /LEGENDA: [\s\S]*−20% ou menos$/);
+  assert.ok(
+    texto.indexOf('LEGENDA:') > texto.indexOf('preencha o precoMedio'),
+    'a legenda fica no rodapé, depois das pendências',
+  );
 });
 

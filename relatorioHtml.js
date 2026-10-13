@@ -13,6 +13,14 @@ import {
   numeroDaSemana,
   paraEstaSemana,
   rotuloDoMarco,
+  tituloDaCarteira,
+  tituloDaReserva,
+  tituloDaSemana,
+  tituloDasPendencias,
+  tituloDoJogo,
+  tituloDoMacro,
+  tituloDoPatrimonio,
+  tituloDoSobra,
   totalDaReserva,
   variacaoDaSemana,
 } from './relatorio.js';
@@ -55,13 +63,13 @@ section {
   margin-bottom: 11px;
 }
 h2 {
-  font-size: 14px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--apagado);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--texto);
   margin-bottom: 10px;
 }
-h3 { font-size: 18px; margin: 14px 0 8px; }
+h3 { font-size: 14px; font-weight: 500; color: var(--apagado); margin: 14px 0 8px; }
 h3:first-child { margin-top: 0; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 th {
@@ -119,7 +127,7 @@ function macroHtml(painel) {
   const corpo = linhas.map(
     (linha) => `<tr><td>${linha.nome}</td><td class="dir">${linha.valor}</td><td class="dir">${linha.semana}</td></tr>`,
   );
-  return secao('Macro', `${tabelaHtml(['Indicador', 'Valor', 'Semana'], corpo)}<p class="nota">${notas.join(' · ')}</p>`);
+  return secao(tituloDoMacro(painel), `${tabelaHtml(['Indicador', 'Valor', 'Semana'], corpo)}<p class="nota">${notas.join(' · ')}</p>`);
 }
 
 function paraEstaSemanaHtml(dados) {
@@ -128,7 +136,7 @@ function paraEstaSemanaHtml(dados) {
   const placar = dados.caderno?.placar?.linha
     ? `<p class="item placar">${dados.caderno.placar.linha}</p>`
     : '';
-  return secao('Para esta semana', `${lista}<p class="pergunta">${pergunta}</p>${placar}`);
+  return secao(tituloDaSemana(itens), `${lista}<p class="pergunta">${pergunta}</p>${placar}`);
 }
 
 // A comemoração vem antes de tudo: é o único momento em que o dinheiro compra vontade.
@@ -193,7 +201,7 @@ function jogoHtml(dados) {
         ? `<p class="jogo-linha">Prêmio do marco de ${rotuloDoMarco(aberto.marco)} expirou · o dinheiro fica investido</p>`
         : '';
 
-  return secao('Jogo dos marcos', `${barra}${linhaDoMarco}${linhaDoPremio}${linhaLiberada}${aviso}`);
+  return secao(tituloDoJogo(jogo) ?? 'Jogo dos marcos', `${barra}${linhaDoMarco}${linhaDoPremio}${linhaLiberada}${aviso}`);
 }
 
 function patrimonioHtml(dados) {
@@ -214,12 +222,12 @@ function patrimonioHtml(dados) {
         .map((parte) => `${parte.nome} ${formatarPercentual(parte.fracao, 1)}`)
         .join(' · ')}</p>`
     : '';
-  return secao('Patrimônio', `${tabelaSimples(linhas)}${barra}`);
+  return secao(tituloDoPatrimonio(dados), `${tabelaSimples(linhas)}${barra}`);
 }
 
 function carteiraHtml(posicoes, { patrimonio = null } = {}) {
   const { linhas } = linhasDaCarteira(posicoes, { patrimonio });
-  if (!linhas.length) return secao('Carteira', '<p class="nota">nenhuma posição em carteira.json</p>');
+  if (!linhas.length) return secao(tituloDaCarteira([]), '<p class="nota">nenhuma posição em carteira.json</p>');
 
   const comFracao = linhas.some((linha) => linha.fracao !== null);
   const cabecalho = ['Ticker', 'Aplicado', 'Hoje', 'Resultado', ...(comFracao ? ['% do patrimônio'] : [])];
@@ -253,13 +261,13 @@ function carteiraHtml(posicoes, { patrimonio = null } = {}) {
     }
   }
   partes.push('<p class="nota">só preço; não inclui dividendos nem imposto</p>');
-  return secao('Carteira', partes.join(''));
+  return secao(tituloDaCarteira(posicoes), partes.join(''));
 }
 
 function reservaHtml(reserva, custoMensal) {
   const custo = Number(custoMensal) || Number(reserva?.custoMensal) || 0;
   const atual = totalDaReserva(reserva);
-  if (!custo || !atual) return secao('Reserva', '<p class="nota">sem dado para calcular</p>');
+  if (!custo || !atual) return secao(tituloDaReserva({}), '<p class="nota">sem dado para calcular</p>');
 
   const alvoMeses = reserva?.alvoMeses ?? 6;
   const meses = atual / custo;
@@ -293,7 +301,7 @@ function reservaHtml(reserva, custoMensal) {
     );
   }
 
-  return secao('Reserva', partes.join(''));
+  return secao(tituloDaReserva({ reserva, custoMensal: custo }), partes.join(''));
 }
 
 function sobraHtml({ receitaMensal, custoMensal, aporteMensal }) {
@@ -303,7 +311,7 @@ function sobraHtml({ receitaMensal, custoMensal, aporteMensal }) {
   const pedacos = [`Sobra ${reais(sobra)}`];
   if (aporteMensal) pedacos.push(`aporte programado ${reais(aporteMensal)}`);
   pedacos.push(semDestino > 0 ? `sobram ${reais(semDestino)} sem destino` : 'nada sobrando sem destino');
-  return secao('Sobra do mês', `<p class="pergunta">${pedacos.join(' · ')}</p>`);
+  return secao(tituloDoSobra({ receitaMensal, custoMensal, aporteMensal }), `<p class="pergunta">${pedacos.join(' · ')}</p>`);
 }
 
 // Na imagem a legenda usa cor de verdade, não emoji.
@@ -336,14 +344,16 @@ export function montarHtml(dados = {}) {
     carteiraHtml(posicoes, { patrimonio: total }),
     sobraHtml(dados),
     macroHtml(painel),
-    `<footer><p class="legenda">${legendaHtml()}</p></footer>`,
   ];
 
   if (pendencias.size) {
     partes.push(
-      secao('Pendências', `<ul class="pendencia">${[...pendencias].map((item) => `<li>${item}</li>`).join('')}</ul>`),
+      secao(tituloDasPendencias(pendencias), `<ul class="pendencia">${[...pendencias].map((item) => `<li>${item}</li>`).join('')}</ul>`),
     );
   }
+
+  // A legenda das cores é rodapé: depois dos cartões, em texto pequeno.
+  partes.push(`<footer><p class="legenda">${legendaHtml()}</p></footer>`);
 
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>${CSS}</style></head><body>${partes.join(
     '',

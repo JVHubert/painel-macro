@@ -121,14 +121,14 @@ test('sem dado o html não quebra e vira pendência', () => {
 test('reserva muito acima da meta fica cinza e cobra a decisão', () => {
   const html = montar({ reserva: { alvoMeses: 6, detalhe: [{ nome: 'Caixinha X', saldo: 40000 }] } });
   assert.match(html, /class="dir neutro">10,0 meses de custo \(meta 6\)/);
-  assert.match(html, /R\$ 16\.000,00 acima da meta de 6 meses — dinheiro que pode ir para prazo maior\./);
+  assert.match(html, /R\$ 16\.000,00 acima da meta de 6 meses — esse dinheiro pode ir para prazo maior\./);
 });
 
 test('o placar do estudo aparece abaixo do Para esta semana, quando existe caderno', () => {
   const placar = { linha: 'Nível 1 · contas certas 1/2 (50%) · decisões com tese 1 · revisadas 0' };
 
   const comPlacar = montar({ caderno: { placar } });
-  assert.match(comPlacar, /Para esta semana[\s\S]*<p class="item placar">Nível 1 · contas certas 1\/2 \(50%\)[\s\S]*Patrimônio/);
+  assert.match(comPlacar, /<p class="item placar">Nível 1 · contas certas 1\/2 \(50%\)[\s\S]*Total<\/td>/);
 
   const semCaderno = montar();
   assert.ok(!semCaderno.includes('class="item placar"'), 'sem caderno, o placar não aparece');
@@ -147,14 +147,15 @@ test('o jogo dos marcos aparece no HTML, com a barra do próximo marco', () => {
     },
   });
 
-  assert.match(comJogo, /Jogo dos marcos/);
+  assert.match(comJogo, /Faltam R\$ 4,3 mil para o marco de R\$ 25 mil/);
   assert.match(comJogo, /class="jogo-barra"><div style="width:83\.0%"/);
   assert.match(comJogo, /R\$ 25 mil<\/span> · faltam R\$ 4\.262,49 · ~2 meses no ritmo atual/);
   assert.match(comJogo, /Prêmio: até R\$ 5\.000,00 → <span class="forte">Exemplo de prêmio<\/span> · nesse trecho, ~30% virá dos juros/);
   assert.match(comJogo, /Primeiro domingo do histórico/);
-  assert.match(comJogo, /Para esta semana[\s\S]*Jogo dos marcos[\s\S]*Patrimônio/);
+  // O cartão do jogo vem entre a semana e o patrimônio.
+  assert.match(comJogo, /class="jogo-barra"[\s\S]*Total<\/td>/);
 
   const semJogo = montar();
-  assert.ok(!semJogo.includes('Jogo dos marcos'), 'sem jogo, o cartão não aparece');
+  assert.ok(!semJogo.includes('para o marco de'), 'sem jogo, o cartão não aparece');
 });
 

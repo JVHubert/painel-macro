@@ -198,7 +198,7 @@ export function linhasDaCarteira(posicoes, { patrimonio = null } = {}) {
 
 export function blocoCarteira(posicoes, { patrimonio = null } = {}) {
   const { linhas, pendencias } = linhasDaCarteira(posicoes, { patrimonio });
-  if (!linhas.length) return { texto: 'CARTEIRA\nnenhuma posição em carteira.json', pendencias };
+  if (!linhas.length) return { texto: `${tituloDaCarteira([])}\nnenhuma posição em carteira.json`, pendencias };
 
   const comFracao = linhas.some((linha) => linha.fracao !== null);
   const cabecalho = ['Ticker', 'Aplicado', 'Hoje', 'Resultado', ...(comFracao ? ['% do patrimônio'] : [])];
@@ -213,7 +213,7 @@ export function blocoCarteira(posicoes, { patrimonio = null } = {}) {
     ]);
   }
 
-  const partes = ['CARTEIRA', tabela(corpo, { colunas: cabecalho.map((_, i) => (i === 0 ? 'esq' : 'dir')) })];
+  const partes = [tituloDaCarteira(posicoes), tabela(corpo, { colunas: cabecalho.map((_, i) => (i === 0 ? 'esq' : 'dir')) })];
   for (const linha of linhas) {
     if (linha.fraseCdi) partes.push(linha.fraseCdi);
     if (linha.divergem) {
@@ -291,7 +291,8 @@ export function resumoMacro(painel, opcoes = {}) {
   const { linhas, notas } = dadosMacro(painel, opcoes);
   const corpo = [['Indicador', 'Valor', 'Semana']];
   for (const linha of linhas) corpo.push([linha.nome, linha.valor, linha.semana]);
-  return `MACRO\n${tabela(corpo, { colunas: ['esq', 'dir', 'dir'] })}\n${notas.join(' · ')}`;
+  // Sem rótulo aqui: quem monta o relatório põe o título-afirmação acima desta tabela.
+  return `${tabela(corpo, { colunas: ['esq', 'dir', 'dir'] })}\n${notas.join(' · ')}`;
 }
 
 // A reserva não é rentabilidade: aqui a cor é o progresso até a meta de meses.
@@ -303,12 +304,12 @@ export function nivelDaReserva(meses, alvoMeses) {
   return NIVEIS[4]; // 🔴 nada guardado
 }
 
-// Dinheiro parado acima da meta é decisão pendente: a frase cobra o registro no diário.
+// Dinheiro parado acima da meta é decisão pendente: a lista de ações do topo é que cobra o registro.
 export function notaDoExcedente({ meses, alvoMeses, atual, custo }) {
   if (meses < alvoMeses * 1.5) return null;
   const excedente = atual - alvoMeses * custo;
   if (excedente <= 0) return null;
-  return `${reais(excedente)} acima da meta de ${alvoMeses} meses — dinheiro que pode ir para prazo maior. Registre a decisão no diário.`;
+  return `${reais(excedente)} acima da meta de ${alvoMeses} meses — esse dinheiro pode ir para prazo maior.`;
 }
 
 // Faixa do "% do CDI": compara com o prometido, se houver promessa.
@@ -395,7 +396,10 @@ export function paraEstaSemana(dados = {}) {  const itens = [];
 
   if (meses !== null && meses >= alvo * 1.5 && custo) {
     const excedente = totalDaReserva(dados.reserva) - alvo * custo;
-    itens.push(`${reais(excedente)} acima da meta de ${alvo} meses — decida o destino e registre no diário.`);
+    itens.push(
+      `${reais(excedente)} acima da meta de ${alvo} meses — decida o destino e registre no diário. ` +
+        'É esse excedente que conta no jogo dos marcos.',
+    );
   }
 
   for (const item of dados.reserva?.detalhe ?? []) {
@@ -465,7 +469,7 @@ export function cartaoDoJogo(jogo) {
   if (!jogo.proximoMarco) {
     linhas.push(`${barraDeTexto(1)} 100%`);
     linhas.push('Você passou do último marco da lista — hora de escolher os próximos.');
-    return `JOGO DOS MARCOS\n${linhas.join('\n')}`;
+    return `${tituloDoJogo(jogo)}\n${linhas.join('\n')}`;
   }
 
   linhas.push(`${barraDeTexto(jogo.percentual)} ${formatarPercentual(jogo.percentual, 0)}`);
@@ -504,7 +508,7 @@ export function cartaoDoJogo(jogo) {
     linhas.push(`Prêmio do marco de ${rotuloDoMarco(aberto.marco)} expirou · o dinheiro fica investido`);
   }
 
-  return `JOGO DOS MARCOS\n${linhas.join('\n')}`;
+  return `${tituloDoJogo(jogo)}\n${linhas.join('\n')}`;
 }
 
 // A reserva numa tabela só: onde está, quanto tem, o que rende e quanto isso é do CDI.
@@ -539,12 +543,12 @@ export function resumoReserva(reserva, { custoMensal, alvoMeses = reserva?.alvoM
 
   if (!custo || !atual) {
     pendencias.add('preencha custoMensal e o saldo da reserva em carteira.json');
-    return { texto: 'RESERVA\nsem dado para calcular', pendencias };
+    return { texto: `${tituloDaReserva({})}\nsem dado para calcular`, pendencias };
   }
 
   const meses = atual / custo;
   const blocos = [
-    `RESERVA\n${tabela(
+    `${tituloDaReserva({ reserva, custoMensal: custo })}\n${tabela(
       [
         ['Saldo', reais(atual)],
         [
@@ -580,6 +584,89 @@ export function resumoReserva(reserva, { custoMensal, alvoMeses = reserva?.alvoM
   return { texto: blocos.join('\n\n'), pendencias };
 }
 
+// --- Títulos-afirmação: a regra do workspace pede título que diga algo, não etiqueta. Todos puros:
+// o título sai dos dados, nunca escrito à mão. ---
+
+// Valores curtos para caber no título: R$ 4,3 mil, R$ 25 mil, R$ 1,2 mi.
+export function reaisCurto(valor) {
+  const numero = Number(valor) || 0;
+  if (Math.abs(numero) >= 1000000) {
+    return `R$ ${(numero / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
+  }
+  if (Math.abs(numero) >= 1000) {
+    return `R$ ${(numero / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  }
+  return reais(numero);
+}
+
+export function tituloDaSemana(itens = []) {
+  if (!itens.length) return 'Nada pendente nesta semana';
+  if (itens.length === 1) return 'Uma coisa para fazer nesta semana';
+  return `${itens.length} coisas para fazer nesta semana`;
+}
+
+export function tituloDoPatrimonio(dados = {}) {
+  const { total } = alocacao(dados);
+  if (!total) return 'Sem patrimônio para medir ainda';
+  const variacao = variacaoDaSemana(dados);
+  if (variacao === null) return `Seu patrimônio é de ${reaisCurto(total)}`;
+  if (!variacao) return 'Seu patrimônio ficou parado na semana';
+  const sentido = variacao > 0 ? 'subiu' : 'caiu';
+  return `Seu patrimônio ${sentido} ${formatarPercentual(Math.abs(variacao))} na semana`;
+}
+
+export function tituloDaReserva(dados = {}) {
+  const atual = mesesDeReserva(dados);
+  const alvo = Number(dados.reserva?.alvoMeses) || 6;
+  if (atual === null) return 'Ainda não dá para medir a reserva';
+  if (atual >= alvo * 1.5) {
+    return `Sua reserva cobre ${formatarNumero(atual, 1)} meses — ${formatarNumero(atual - alvo, 1)} a mais que a meta`;
+  }
+  if (atual >= alvo) return `Sua reserva bateu a meta: cobre ${formatarNumero(atual, 1)} meses`;
+  return `Sua reserva cobre ${formatarNumero(atual, 1)} dos ${alvo} meses que você quer`;
+}
+
+export function tituloDaCarteira(posicoes = []) {
+  if (!posicoes.length) return 'Nenhum papel em carteira ainda';
+
+  const maior = [...posicoes].sort((a, b) => (b.mercado ?? 0) - (a.mercado ?? 0))[0];
+  if (maior.rentabilidade === null) return `${maior.ticker} está em carteira, sem preço hoje`;
+
+  const sentido = maior.rentabilidade >= 0 ? 'subiu' : 'caiu';
+  const base = `${maior.ticker} ${sentido} ${formatarPercentual(Math.abs(maior.rentabilidade))} desde a compra`;
+  if (maior.vsCdi === null) return base;
+  if (maior.vsCdi < 0) return `${base} — o CDI rendeu mais no mesmo período`;
+  return `${base} — acima do CDI no mesmo período`;
+}
+
+export function tituloDoJogo(jogo) {
+  if (!jogo) return null;
+  if (!jogo.proximoMarco) return 'Você passou do último marco da lista';
+  if (jogo.falta <= 0) {
+    return `Você bateu o marco de ${rotuloDoMarco(jogo.proximoMarco)} — falta a confirmação de mais um domingo`;
+  }
+  return `Faltam ${reaisCurto(jogo.falta)} para o marco de ${rotuloDoMarco(jogo.proximoMarco)}`;
+}
+
+export function tituloDoSobra({ receitaMensal, custoMensal, aporteMensal } = {}) {
+  if (!receitaMensal || !custoMensal) return null;
+  const semDestino = receitaMensal - custoMensal - (Number(aporteMensal) || 0);
+  if (semDestino <= 0) return 'Cada real da sobra do mês já tem destino';
+  return `Sobram ${reaisCurto(semDestino)} sem destino neste mês`;
+}
+
+export function tituloDoMacro(painel) {
+  const juroReal = painel?.indicadores?.find((cartao) => cartao.id === 'juro-real')?.valor;
+  if (!Number.isFinite(juroReal)) return 'Sem indicador de juro real hoje';
+  return `O juro real está em ${formatarPercentual(juroReal / 100, 2)} ao ano`;
+}
+
+export function tituloDasPendencias(pendencias) {
+  const quantas = pendencias?.size ?? 0;
+  if (!quantas) return null;
+  return quantas === 1 ? 'Uma pendência para resolver' : `${quantas} pendências para resolver`;
+}
+
 export function montarRelatorio(dados = {}) {
   const { data, painel, receitaMensal, custoMensal, aporteMensal } = dados;
 
@@ -594,7 +681,7 @@ export function montarRelatorio(dados = {}) {
   const itensDaSemana = semana.itens.map((item, i) => `${i + 1}. ${item}`);
   itensDaSemana.push(`Pergunta da semana: ${semana.pergunta}`);
   if (dados.caderno?.placar?.linha) itensDaSemana.push(dados.caderno.placar.linha);
-  blocos.push(`PARA ESTA SEMANA\n${itensDaSemana.join('\n')}`);
+  blocos.push(`${tituloDaSemana(semana.itens)}\n${itensDaSemana.join('\n')}`);
 
   const cartao = cartaoDoJogo(dados.jogo);
   if (cartao) blocos.push(cartao);
@@ -605,7 +692,7 @@ export function montarRelatorio(dados = {}) {
   if (variacao !== null) {
     linhasDoPatrimonio.push(['Na semana (estimativa)', `${seta(variacao)}${formatarPercentual(Math.abs(variacao))}`]);
   }
-  blocos.push(`PATRIMÔNIO\n${tabela(linhasDoPatrimonio, { colunas: ['esq', 'dir'] })}`);
+  blocos.push(`${tituloDoPatrimonio(dados)}\n${tabela(linhasDoPatrimonio, { colunas: ['esq', 'dir'] })}`);
   if (partes.length) {
     blocos.push(partes.map((parte) => `${parte.nome} ${formatarPercentual(parte.fracao, 1)}`).join(' · '));
   }
@@ -614,20 +701,21 @@ export function montarRelatorio(dados = {}) {
   blocos.push(blocoReserva.texto);
   blocos.push(carteira.texto);
 
-  if (receitaMensal && custoMensal) {
-    const sobra = receitaMensal - custoMensal;
-    const semDestino = sobra - (Number(aporteMensal) || 0);
-    const pedacos = [`Sobra ${reais(sobra)}`];
+  const sobra = tituloDoSobra(dados);
+  if (sobra) {
+    const semDestino = receitaMensal - custoMensal - (Number(aporteMensal) || 0);
+    const pedacos = [`Sobra ${reais(receitaMensal - custoMensal)}`];
     if (aporteMensal) pedacos.push(`aporte programado ${reais(aporteMensal)}`);
     pedacos.push(semDestino > 0 ? `sobram ${reais(semDestino)} sem destino` : 'nada sobrando sem destino');
-    blocos.push(`SOBRA DO MÊS\n${pedacos.join(' · ')}`);
+    blocos.push(`${sobra}\n${pedacos.join(' · ')}`);
   }
 
-  blocos.push(resumoMacro(painel));
-  blocos.push(`LEGENDA: ${legendaNiveis()}`);
+  blocos.push(`${tituloDoMacro(painel)}\n${resumoMacro(painel)}`);
   if (pendencias.size) {
-    blocos.push(`PENDÊNCIAS\n${[...pendencias].map((item) => `- ${item}`).join('\n')}`);
+    blocos.push(`${tituloDasPendencias(pendencias)}\n${[...pendencias].map((item) => `- ${item}`).join('\n')}`);
   }
+  // A legenda das cores é rodapé: no fim, em texto pequeno, sem separar dois cartões.
+  blocos.push(`LEGENDA: ${legendaNiveis()}`);
 
   return blocos.join('\n\n');
 }
