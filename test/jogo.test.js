@@ -176,6 +176,21 @@ test('o histórico do jogo guarda um registro por dia, em ordem', () => {
   assert.deepEqual(historicoAtualizado(completo, { data: '2026-10-18', patrimonio: 'nada' }), completo);
 });
 
+test('o histórico é semanal: dois dias colados valem como um', () => {
+  // Terça e quarta: o registro da quarta substitui o da terça (não são dois domingos).
+  const terca = historicoAtualizado([], { data: '2026-10-13', patrimonio: 30000 });
+  const quarta = historicoAtualizado(terca, { data: '2026-10-14', patrimonio: 31000 });
+  assert.deepEqual(quarta, [{ data: '2026-10-14', patrimonio: 31000 }]);
+
+  // Domingo e o domingo seguinte (7 dias): dois registros, e aí o marco confirma.
+  const domingo = historicoAtualizado([], { data: '2026-10-11', patrimonio: 30000 });
+  const proximo = historicoAtualizado(domingo, { data: '2026-10-18', patrimonio: 30000 });
+  assert.deepEqual(proximo, [
+    { data: '2026-10-11', patrimonio: 30000 },
+    { data: '2026-10-18', patrimonio: 30000 },
+  ]);
+});
+
 test('a confirmação usa o histórico que o relatório salvou', () => {
   const patrimonio = 30000;
   const historico = historicoAtualizado([], { data: '2026-10-04', patrimonio });

@@ -8,6 +8,9 @@ export const MARCOS_PADRAO = [25000, 40000, 60000, 80000, 100000, 200000, 300000
 export const REGRA_PADRAO = { base: 'incremento', percentual: 0.2 };
 export const CONFIRMACOES_PADRAO = 2;
 export const PRAZO_DIAS_PADRAO = 60;
+// Dois registros mais perto que isso são a mesma semana: rodar o relatório em dois dias seguidos
+// não pode valer como dois domingos na confirmação do marco.
+export const DIAS_ENTRE_REGISTROS = 6;
 
 // O que faltar no `jogo` do carteira.json assume as regras decididas em 11/10/2026.
 export function regrasDoJogo(jogo = {}) {
@@ -153,9 +156,17 @@ export function historicoAtualizado(historico = [], { data, patrimonio } = {}) {
   const valor = Number(patrimonio);
   if (!data || !Number.isFinite(valor)) return [...historico];
 
-  return [...historico.filter((registro) => registro?.data !== data), { data, patrimonio: valor }].sort(
-    (a, b) => (a.data < b.data ? -1 : 1),
-  );
+  const lista = [...historico].filter((registro) => registro?.data).sort((a, b) => (a.data < b.data ? -1 : 1));
+  const ultimo = lista.at(-1);
+  const mesmoDia = ultimo?.data === data;
+  // O histórico é semanal: um registro fora de domingo que caia a menos de `DIAS_ENTRE_REGISTROS` do
+  // último atualiza o registro da semana em vez de criar outro — senão terça e quarta valeriam como
+  // dois domingos e um pico do mercado liberaria prêmio.
+  const dias = ultimo ? diasEntre(ultimo.data, data) : null;
+  const colado = ultimo && dias !== null && dias > 0 && dias < DIAS_ENTRE_REGISTROS;
+
+  const novo = [...(mesmoDia || colado ? lista.slice(0, -1) : lista), { data, patrimonio: valor }];
+  return novo.sort((a, b) => (a.data < b.data ? -1 : 1));
 }
 
 // --- O mural: o que foi liberado, o que já foi comprado e a frase de cada marco (F0.5d) ---
@@ -164,6 +175,8 @@ export const CAMPOS_MURAL = ['marco', 'liberadoEm', 'valorLiberado', 'premio', '
 
 const somarDias = (dataIso, dias) =>
   new Date(Date.parse(`${dataIso}T00:00:00Z`) + dias * 86400000).toISOString().slice(0, 10);
+
+const diasEntre = (de, para) => (Date.parse(`${para}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86400000;
 
 const dataBr = (dataIso) => String(dataIso ?? '').split('-').reverse().join('/');
 
@@ -238,7 +251,7 @@ export function mensagemDoMarco({ marco, valorLiberado, premio, prazo }) {
 
 // Meses entre duas datas, com uma casa: é o número que mostra os juros acelerando.
 export function mesesEntre(de, para) {
-  const dias = (Date.parse(`${para}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86400000;
+  const dias = diasEntre(de, para);
   if (!Number.isFinite(dias)) return null;
   return Math.max(0, Math.round((dias / 30.4375) * 10) / 10);
 }

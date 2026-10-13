@@ -169,15 +169,24 @@ for (const confirmado of jogoDeHoje.confirmados) {
     prazo: prazoDeCompra(HOJE, regras.prazoDias),
   });
 }
-if (comemoracoes.length) {
-  await mkdir(new URL('./', MURAL), { recursive: true });
-  await writeFile(MURAL, mural, 'utf8');
-  if (!SECO) {
+// `--seco` só confere o relatório: nada é gravado nos dados privados (nem histórico, nem mural).
+const historicoNovo = historicoAtualizado(historicoSalvo, { data: HOJE, patrimonio });
+if (!SECO) {
+  if (comemoracoes.length) {
+    await mkdir(new URL('./', MURAL), { recursive: true });
+    await writeFile(MURAL, mural, 'utf8');
     for (const comemoracao of comemoracoes) {
       await enviarSemDerrubar(mensagemDoMarco(comemoracao), { titulo: 'Painel macro - marco batido' });
     }
   }
+  await mkdir(new URL('./', HISTORICO), { recursive: true });
+  await writeFile(HISTORICO, `${JSON.stringify(historicoNovo, null, 2)}\n`, 'utf8');
 }
+console.log(
+  MOSTRAR_DETALHE
+    ? `jogo: ${historicoNovo.length} registro(s) no histórico, patrimônio R$ ${patrimonio}${SECO ? ' (modo seco: nada gravado)' : ''}`
+    : `jogo: ${historicoNovo.length} registro(s) no histórico${SECO ? ' (modo seco: nada gravado)' : ''}`,
+);
 
 dados.jogo = {
   ...jogoDeHoje,
@@ -193,15 +202,6 @@ dados.jogo = {
       ? null
       : parteDosJuros(jogoDeHoje.proximoMarco, jogoDeHoje.patrimonioDoJogo, carteira.aporteMensal, taxaRealAnual),
 };
-
-const historico = historicoAtualizado(historicoSalvo, { data: HOJE, patrimonio });
-await mkdir(new URL('./', HISTORICO), { recursive: true });
-await writeFile(HISTORICO, `${JSON.stringify(historico, null, 2)}\n`, 'utf8');
-console.log(
-  MOSTRAR_DETALHE
-    ? `jogo: ${historico.length} registro(s) no histórico, patrimônio R$ ${patrimonio}`
-    : `jogo: ${historico.length} registro(s) no histórico`,
-);
 
 const texto = montarRelatorio(dados);
 await mkdir(PASTA, { recursive: true });
