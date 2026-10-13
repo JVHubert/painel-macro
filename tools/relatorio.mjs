@@ -6,7 +6,7 @@ import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostr
 import { alocacao, montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
-import { historicoAtualizado } from '../jogo.js';
+import { historicoAtualizado, mesesAte, parteDosJuros, situacaoDoJogo } from '../jogo.js';
 import { dadosUrl, lerJson, lerLista, lerTexto } from './arquivos.mjs';
 import { renderizar } from './imagem.mjs';
 import { cotacao, serieCdi } from './mercado.mjs';
@@ -120,15 +120,36 @@ const dados = {
   caderno: resumoDoCaderno(HOJE, await lerTexto(DIARIO), await lerTexto(ESTUDO)),
 };
 
-const texto = montarRelatorio(dados);
-await mkdir(PASTA, { recursive: true });
-await writeFile(new URL(`${HOJE}.md`, PASTA), `${texto}\n`, 'utf8');
-console.log(`relatório salvo em relatorios/${HOJE}.md`);
-
-// O jogo dos marcos precisa da memória do patrimônio: é ela que confirma um marco em dois domingos
-// seguidos, e não um pico do mercado. Um registro por dia de relatório.
+// O jogo dos marcos precisa da memória do patrimônio: é ela que confirma o marco em dois domingos
+// seguidos, e não um pico do mercado. A memória é gravada com um registro por dia de relatório.
 const patrimonio = alocacao(dados).total;
-const historico = historicoAtualizado(await lerLista(HISTORICO), { data: HOJE, patrimonio });
+const historicoSalvo = await lerLista(HISTORICO);
+const jogoDoArquivo = carteira.jogo ?? {};
+const metaDaReserva = (Number(carteira.reserva?.alvoMeses) || 6) * (Number(carteira.custoMensal) || 0);
+// A taxa real do painel é a melhor estimativa do ritmo daqui para a frente.
+const taxaRealAnual = (painel?.indicadores?.find((cartao) => cartao.id === 'juro-real')?.valor ?? 0) / 100;
+
+const jogoDeHoje = situacaoDoJogo({
+  jogo: jogoDoArquivo,
+  historico: historicoSalvo,
+  patrimonio,
+  metaDaReserva,
+  hoje: HOJE,
+});
+dados.jogo = {
+  ...jogoDeHoje,
+  semHistorico: historicoSalvo.length === 0,
+  meses:
+    jogoDeHoje.proximoMarco === null
+      ? 0
+      : mesesAte(jogoDeHoje.proximoMarco, jogoDeHoje.patrimonioDoJogo, carteira.aporteMensal, taxaRealAnual),
+  juros:
+    jogoDeHoje.proximoMarco === null
+      ? null
+      : parteDosJuros(jogoDeHoje.proximoMarco, jogoDeHoje.patrimonioDoJogo, carteira.aporteMensal, taxaRealAnual),
+};
+
+const historico = historicoAtualizado(historicoSalvo, { data: HOJE, patrimonio });
 await mkdir(new URL('./', HISTORICO), { recursive: true });
 await writeFile(HISTORICO, `${JSON.stringify(historico, null, 2)}\n`, 'utf8');
 console.log(
@@ -136,6 +157,11 @@ console.log(
     ? `jogo: ${historico.length} registro(s) no histórico, patrimônio R$ ${patrimonio}`
     : `jogo: ${historico.length} registro(s) no histórico`,
 );
+
+const texto = montarRelatorio(dados);
+await mkdir(PASTA, { recursive: true });
+await writeFile(new URL(`${HOJE}.md`, PASTA), `${texto}\n`, 'utf8');
+console.log(`relatório salvo em relatorios/${HOJE}.md`);
 
 // A imagem (com cor de verdade) é o canal principal; o texto é a reserva.
 let enviado = null;

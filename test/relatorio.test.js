@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { NIVEIS, anualizarDiaria, compararComCdi, legendaNiveis, nivelDeResultado, taxaEquivalente } from '../indicadores.js';
 import {
   alocacao,
+  cartaoDoJogo,
   deltaPeriodo,
   deslocarDias,
   encurtar,
@@ -15,6 +16,7 @@ import {
   resumoMacro,
   resumoPosicao,
   resumoReserva,
+  rotuloDoMarco,
   tabela,
   variacaoPeriodo,
 } from '../relatorio.js';
@@ -454,3 +456,62 @@ test('o placar do estudo aparece abaixo do Para esta semana', () => {
   const semCaderno = montarRelatorio(dados);
   assert.ok(!semCaderno.includes('Nível 1 ·'), 'sem caderno, o placar não entra no relatório');
 });
+
+test('o cartão do jogo entra logo depois do Para esta semana', () => {
+  const jogo = {
+    proximoMarco: 25000,
+    falta: 4262.49,
+    percentual: 0.83,
+    meses: 2,
+    premio: { valor: 5000, item: { nome: 'Exemplo de prêmio' } },
+    juros: { fracao: 0.3 },
+  };
+
+  const texto = montarRelatorio({
+    data: '2026-10-11',
+    painel: PAINEL,
+    posicoes: [],
+    reserva: { alvoMeses: 6, detalhe: [{ nome: 'Caixinha X', saldo: 6000 }] },
+    custoMensal: 1000,
+    jogo,
+  });
+
+  assert.match(texto, /JOGO DOS MARCOS\n\[█+░+\] 83%/);
+  assert.match(texto, /Próximo marco: R\$ 25 mil · faltam R\$ 4\.262,49 · ~2 meses no ritmo atual/);
+  assert.match(texto, /Prêmio: até R\$ 5\.000,00 → Exemplo de prêmio · nesse trecho, ~30% virá dos juros/);
+  assert.match(texto, /PARA ESTA SEMANA[\s\S]*JOGO DOS MARCOS[\s\S]*PATRIMÔNIO/);
+
+  const semJogo = montarRelatorio({ data: '2026-10-11', painel: PAINEL, posicoes: [], reserva: { atual: 0 } });
+  assert.ok(!semJogo.includes('JOGO DOS MARCOS'), 'sem jogo, o cartão não entra');
+});
+
+test('o cartão cobra o prêmio e avisa o primeiro domingo do histórico', () => {
+  const texto = cartaoDoJogo({
+    proximoMarco: 40000,
+    falta: 1000,
+    percentual: 0.5,
+    meses: 0,
+    premio: { valor: 3000, item: null },
+    juros: { fracao: 0.2 },
+    semHistorico: true,
+  });
+
+  assert.match(texto, /bateu o marco — falta a confirmação de mais um domingo/);
+  assert.match(texto, /Prêmio: escolha o prêmio do marco de R\$ 40 mil/);
+  assert.match(texto, /primeiro domingo do histórico/);
+});
+
+test('quando a lista acaba, o cartão diz que é hora de escolher os próximos', () => {
+  assert.match(cartaoDoJogo({ proximoMarco: null, percentual: 1 }), /Você passou do último marco da lista/);
+  assert.equal(cartaoDoJogo(null), null);
+});
+
+test('o marco aparece na língua de quem lê', () => {
+  assert.equal(rotuloDoMarco(25000), 'R$ 25 mil');
+  assert.equal(rotuloDoMarco(80000), 'R$ 80 mil');
+  assert.equal(rotuloDoMarco(1000000), 'R$ 1 milhão');
+  assert.equal(rotuloDoMarco(1500000), 'R$ 1,5 milhão');
+  assert.equal(rotuloDoMarco(2000000), 'R$ 2 milhões');
+  assert.equal(rotuloDoMarco(500), 'R$ 500,00');
+});
+

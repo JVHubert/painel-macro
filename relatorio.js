@@ -416,6 +416,62 @@ export function paraEstaSemana(dados = {}) {
   return { itens, pergunta: perguntaDaSemana(dados.data)?.texto ?? '' };
 }
 
+// O marco na língua de quem lê: 25000 vira R$ 25 mil, 1000000 vira R$ 1 milhão.
+export function rotuloDoMarco(valor) {
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) return '';
+  if (numero >= 1000000) {
+    const milhoes = numero / 1000000;
+    const texto = milhoes.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+    return `R$ ${texto} ${milhoes < 2 ? 'milhão' : 'milhões'}`;
+  }
+  if (numero >= 1000) return `R$ ${(numero / 1000).toLocaleString('pt-BR')} mil`;
+  return reais(numero);
+}
+
+const barraDeTexto = (fracao, largura = 18) => {
+  const preenchido = Math.round(Math.min(1, Math.max(0, Number(fracao) || 0)) * largura);
+  return `[${'█'.repeat(preenchido)}${'░'.repeat(largura - preenchido)}]`;
+};
+
+// O cartão do jogo dos marcos (F0.5c): a barra até o próximo marco, o que falta e o prêmio.
+export function cartaoDoJogo(jogo) {
+  if (!jogo) return null;
+
+  const linhas = [];
+  if (!jogo.proximoMarco) {
+    linhas.push(`${barraDeTexto(1)} 100%`);
+    linhas.push('Você passou do último marco da lista — hora de escolher os próximos.');
+    return `JOGO DOS MARCOS\n${linhas.join('\n')}`;
+  }
+
+  linhas.push(`${barraDeTexto(jogo.percentual)} ${formatarPercentual(jogo.percentual, 0)}`);
+
+  const pedacos = [`Próximo marco: ${rotuloDoMarco(jogo.proximoMarco)}`, `faltam ${reais(jogo.falta)}`];
+  if (!Number.isFinite(jogo.meses)) {
+    pedacos.push('no ritmo atual não chega');
+  } else if (jogo.meses > 0) {
+    pedacos.push(`~${plural(jogo.meses, 'mês', 'meses')} no ritmo atual`);
+  } else {
+    pedacos.push('bateu o marco — falta a confirmação de mais um domingo');
+  }
+  linhas.push(`${pedacos.join(' · ')} (reserva de emergência fora da conta)`);
+
+  if (jogo.premio?.item) {
+    const juros = jogo.juros?.fracao;
+    const pedacoDeJuros = Number.isFinite(juros) ? ` · nesse trecho, ~${formatarPercentual(juros, 0)} virá dos juros` : '';
+    linhas.push(`Prêmio: até ${reais(jogo.premio.valor)} → ${jogo.premio.item.nome}${pedacoDeJuros}`);
+  } else {
+    linhas.push(`Prêmio: escolha o prêmio do marco de ${rotuloDoMarco(jogo.proximoMarco)}`);
+  }
+
+  if (jogo.semHistorico) {
+    linhas.push('(primeiro domingo do histórico: a confirmação do marco começa no próximo)');
+  }
+
+  return `JOGO DOS MARCOS\n${linhas.join('\n')}`;
+}
+
 // A reserva numa tabela só: onde está, quanto tem, o que rende e quanto isso é do CDI.
 export function linhasDaReserva(reserva) {
   const pendencias = new Set();
@@ -501,6 +557,9 @@ export function montarRelatorio(dados = {}) {
   itensDaSemana.push(`Pergunta da semana: ${semana.pergunta}`);
   if (dados.caderno?.placar?.linha) itensDaSemana.push(dados.caderno.placar.linha);
   blocos.push(`PARA ESTA SEMANA\n${itensDaSemana.join('\n')}`);
+
+  const cartao = cartaoDoJogo(dados.jogo);
+  if (cartao) blocos.push(cartao);
 
   const { total, partes } = alocacao(dados);
   const variacao = variacaoDaSemana(dados);

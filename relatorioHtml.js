@@ -12,6 +12,7 @@ import {
   notaDoExcedente,
   numeroDaSemana,
   paraEstaSemana,
+  rotuloDoMarco,
   totalDaReserva,
   variacaoDaSemana,
 } from './relatorio.js';
@@ -82,6 +83,10 @@ tr.totais td { border-top: 1px solid var(--linha); padding-top: 9px; font-weight
 .pergunta { font-size: 17px; line-height: 1.45; }
 .item { margin-top: 6px; }
 .placar { color: var(--apagado); font-size: 14px; }
+.jogo-barra { height: 14px; margin: 2px 0 10px; border-radius: 7px; background: var(--linha); overflow: hidden; }
+.jogo-barra div { height: 100%; background: var(--bom); }
+.jogo-linha { font-size: 16px; margin-top: 4px; }
+.jogo-linha .forte { color: var(--bom); }
 header .resumo { color: var(--texto); font-size: 16px; margin-top: 8px; }
 .barra { display: flex; height: 20px; margin-top: 10px; border-radius: 6px; overflow: hidden; background: var(--linha); }
 .barra .parte { height: 100%; }
@@ -124,6 +129,41 @@ function paraEstaSemanaHtml(dados) {
     ? `<p class="item placar">${dados.caderno.placar.linha}</p>`
     : '';
   return secao('Para esta semana', `${lista}<p class="pergunta">${pergunta}</p>${placar}`);
+}
+
+// O jogo dos marcos: a barra é o que faz o próximo prêmio parecer perto.
+function jogoHtml(dados) {
+  const jogo = dados.jogo;
+  if (!jogo) return '';
+
+  if (!jogo.proximoMarco) {
+    return secao(
+      'Jogo dos marcos',
+      '<div class="jogo-barra"><div style="width:100%"></div></div><p class="jogo-linha">Você passou do último marco da lista — hora de escolher os próximos.</p>',
+    );
+  }
+
+  const barra = `<div class="jogo-barra"><div style="width:${(jogo.percentual * 100).toFixed(1)}%"></div></div>`;
+  const meses = !Number.isFinite(jogo.meses)
+    ? 'no ritmo atual não chega'
+    : jogo.meses > 0
+      ? `~${jogo.meses} ${jogo.meses === 1 ? 'mês' : 'meses'} no ritmo atual`
+      : 'bateu o marco — falta a confirmação de mais um domingo';
+  const linhaDoMarco = `<p class="jogo-linha"><span class="forte">${rotuloDoMarco(jogo.proximoMarco)}</span> · faltam ${reais(
+    jogo.falta,
+  )} · ${meses} <span class="nota">(reserva de emergência fora da conta)</span></p>`;
+
+  const juros = jogo.juros?.fracao;
+  const pedacoDeJuros = Number.isFinite(juros) ? ` · nesse trecho, ~${formatarPercentual(juros, 0)} virá dos juros` : '';
+  const linhaDoPremio = jogo.premio?.item
+    ? `<p class="jogo-linha">Prêmio: até ${reais(jogo.premio.valor)} → <span class="forte">${jogo.premio.item.nome}</span>${pedacoDeJuros}</p>`
+    : `<p class="jogo-linha">Prêmio: escolha o prêmio do marco de ${rotuloDoMarco(jogo.proximoMarco)}</p>`;
+
+  const aviso = jogo.semHistorico
+    ? '<p class="nota">Primeiro domingo do histórico: a confirmação do marco começa no próximo.</p>'
+    : '';
+
+  return secao('Jogo dos marcos', `${barra}${linhaDoMarco}${linhaDoPremio}${aviso}`);
 }
 
 function patrimonioHtml(dados) {
@@ -259,6 +299,7 @@ export function montarHtml(dados = {}) {
       dados,
     )}</p></header>`,
     paraEstaSemanaHtml(dados),
+    jogoHtml(dados),
     patrimonioHtml(dados),
     reservaHtml(reserva, custoMensal),
     carteiraHtml(posicoes, { patrimonio: total }),

@@ -133,3 +133,28 @@ test('o placar do estudo aparece abaixo do Para esta semana, quando existe cader
   const semCaderno = montar();
   assert.ok(!semCaderno.includes('class="item placar"'), 'sem caderno, o placar não aparece');
 });
+
+test('o jogo dos marcos aparece no HTML, com a barra do próximo marco', () => {
+  const comJogo = montar({
+    jogo: {
+      proximoMarco: 25000,
+      falta: 4262.49,
+      percentual: 0.83,
+      meses: 2,
+      premio: { valor: 5000, item: { nome: 'Exemplo de prêmio' } },
+      juros: { fracao: 0.3 },
+      semHistorico: true,
+    },
+  });
+
+  assert.match(comJogo, /Jogo dos marcos/);
+  assert.match(comJogo, /class="jogo-barra"><div style="width:83\.0%"/);
+  assert.match(comJogo, /R\$ 25 mil<\/span> · faltam R\$ 4\.262,49 · ~2 meses no ritmo atual/);
+  assert.match(comJogo, /Prêmio: até R\$ 5\.000,00 → <span class="forte">Exemplo de prêmio<\/span> · nesse trecho, ~30% virá dos juros/);
+  assert.match(comJogo, /Primeiro domingo do histórico/);
+  assert.match(comJogo, /Para esta semana[\s\S]*Jogo dos marcos[\s\S]*Patrimônio/);
+
+  const semJogo = montar();
+  assert.ok(!semJogo.includes('Jogo dos marcos'), 'sem jogo, o cartão não aparece');
+});
+

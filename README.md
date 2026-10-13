@@ -63,6 +63,7 @@ Todo domingo às 18h (Brasília) o workflow "Relatório semanal" monta e **envia
 
 - **Frase-resumo** no topo — o que a semana fez com o patrimônio e onde a reserva está.
 - **Para esta semana** — até 3 ações decididas por regras (excedente da reserva, produto rendendo pouco, diário e estudo), a pergunta do estudo e o placar do aprendizado (contas certas das últimas 8 semanas, decisões com tese, revisadas).
+- **Jogo dos marcos** — a barra do marco atual até o próximo, quanto falta, em quantos meses chega no ritmo atual e qual prêmio está liberado (reserva de emergência fora da conta).
 - **Patrimônio** — total, variação estimada da semana e a barra de alocação (reserva × ações).
 - **Reserva** — uma tabela só: onde está, saldo, o que rende e quanto isso é do CDI.
 - **Carteira** — uma linha por papel (aplicado, hoje, resultado, % do patrimônio) e quanto o mesmo dinheiro teria rendido no CDI.
