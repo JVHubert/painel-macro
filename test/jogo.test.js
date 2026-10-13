@@ -9,6 +9,7 @@ import {
   historicoAtualizado,
   mensagemDoMarco,
   mesesAte,
+  mesesEntre,
   muralComMarco,
   parteDosJuros,
   premioDoMarco,
@@ -16,6 +17,7 @@ import {
   regrasDoJogo,
   situacaoDoJogo,
   tituloDoMarco,
+  trechosDoMural,
   valorDoPremio,
 } from '../jogo.js';
 import { definirCampos, lerEntradas } from '../caderno.js';
@@ -257,6 +259,28 @@ test('prêmio comprado sai da fila e o mais antigo vem primeiro', () => {
     blocoDoMarco({ marco: 40000, liberadoEm: '2026-11-01' }),
   );
   assert.equal(premioEmAberto(lerEntradas(dois), { hoje: '2026-11-20' }).marco, 25000);
+});
+
+test('os trechos do mural contam quantos meses cada um levou', () => {
+  const texto = muralComMarco(
+    muralComMarco('', { marco: 25000, liberadoEm: '2026-07-05', valorLiberado: 5000, premio: 'Tatuagem' }),
+    { marco: 40000, liberadoEm: '2026-10-11', valorLiberado: 3000, premio: 'Mesa de som' },
+  );
+
+  // 182 dias do começo do jogo até o primeiro marco (6,0 meses) e 98 dias até o segundo (3,2).
+  const trechos = trechosDoMural(lerEntradas(texto), { inicio: '2026-01-04' });
+  assert.deepEqual(
+    trechos.map((trecho) => [trecho.marco, trecho.meses, trecho.premio]),
+    [
+      [25000, 6, 'Tatuagem'],
+      [40000, 3.2, 'Mesa de som'],
+    ],
+  );
+
+  // Sem histórico, o primeiro trecho fica sem tempo — e o mural diz isso.
+  assert.equal(trechosDoMural(lerEntradas(texto))[0].meses, null);
+  assert.equal(mesesEntre('2026-04-13', '2026-10-13'), 6);
+  assert.equal(mesesEntre('2026-10-13', '2026-10-01'), 0);
 });
 
 test('a mensagem da comemoração diz o prêmio e o prazo', () => {

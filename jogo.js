@@ -233,3 +233,36 @@ export function mensagemDoMarco({ marco, valorLiberado, premio, prazo }) {
     2,
   )}${nome}. Você tem até ${dataBr(prazo)} para comprar.`;
 }
+
+// --- O mural de conquistas (F0.5e): cada trecho e quantos meses ele levou ---
+
+// Meses entre duas datas, com uma casa: é o número que mostra os juros acelerando.
+export function mesesEntre(de, para) {
+  const dias = (Date.parse(`${para}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86400000;
+  if (!Number.isFinite(dias)) return null;
+  return Math.max(0, Math.round((dias / 30.4375) * 10) / 10);
+}
+
+// Cada marco batido, do mais antigo para o mais novo, com o tempo que levou desde o anterior.
+// Para o primeiro trecho, o relógio começa no primeiro registro do histórico (`inicio`).
+export function trechosDoMural(entradasDoMural = [], { inicio = null } = {}) {
+  const blocos = entradasDoMural
+    .filter((entrada) => Number(entrada?.campos?.marco) > 0)
+    .sort((a, b) => (String(a.campos.liberadoEm) < String(b.campos.liberadoEm) ? -1 : 1));
+
+  let anterior = inicio;
+  return blocos.map((bloco) => {
+    const item = {
+      marco: Number(bloco.campos.marco),
+      liberadoEm: bloco.campos.liberadoEm,
+      valorLiberado: Number(bloco.campos.valorLiberado) || 0,
+      premio: String(bloco.campos.premio ?? ''),
+      compradoEm: String(bloco.campos.compradoEm ?? ''),
+      valorGasto: bloco.campos.valorGasto ? Number(bloco.campos.valorGasto) : null,
+      frase: String(bloco.campos.frase ?? ''),
+      meses: anterior ? mesesEntre(anterior, bloco.campos.liberadoEm) : null,
+    };
+    anterior = bloco.campos.liberadoEm;
+    return item;
+  });
+}

@@ -63,7 +63,7 @@ Todo domingo às 18h (Brasília) o workflow "Relatório semanal" monta e **envia
 
 - **Frase-resumo** no topo — o que a semana fez com o patrimônio e onde a reserva está.
 - **Para esta semana** — até 3 ações decididas por regras (excedente da reserva, produto rendendo pouco, diário e estudo), a pergunta do estudo e o placar do aprendizado (contas certas das últimas 8 semanas, decisões com tese, revisadas).
-- **Jogo dos marcos** — a barra do marco atual até o próximo, quanto falta, em quantos meses chega no ritmo atual e qual prêmio está liberado (reserva de emergência fora da conta).
+- **Jogo dos marcos** — a barra do marco atual até o próximo, quanto falta, em quantos meses chega no ritmo atual e qual prêmio está liberado (reserva de emergência fora da conta). Quando um marco é batido, o primeiro cartão do relatório vira a comemoração. O `npm run mural` gera a linha do tempo de todos os marcos em `00 Outputs` (arquivo local, nunca publicado).
 - **Patrimônio** — total, variação estimada da semana e a barra de alocação (reserva × ações).
 - **Reserva** — uma tabela só: onde está, saldo, o que rende e quanto isso é do CDI.
 - **Carteira** — uma linha por papel (aplicado, hoje, resultado, % do patrimônio) e quanto o mesmo dinheiro teria rendido no CDI.
@@ -301,7 +301,8 @@ npm run relatorio # monta o relatório, salva em relatorios/ e envia (imagem, se
 npm run relatorio -- --seco # igual, mas monta e salva sem enviar nada (para conferir)
 npm run diario    # diário de decisões: o que falta escrever e o que venceu
 npm run estudo    # pergunta da semana, respostas e aproveitamento
-npm run telegram  # lê e responde o que chegou para o bot (/r, /d) e marca como lido
+npm run mural     # gera o mural de conquistas em 00 Outputs (arquivo local, nunca publicado)
+npm run telegram  # lê e responde o que chegou para o bot (/r, /d, /premio) e marca como lido
 npm run enviar-dados # manda carteira, diário e estudo para o repositório privado
 npm run contexto  # bloco de contexto para colar no professor de IA (sem número exato)
 npm run chat-id   # descobre o seu chat_id do Telegram (para o .env.local)

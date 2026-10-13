@@ -11,6 +11,7 @@
     "relatorio": "node tools/relatorio.mjs",
     "diario": "node tools/diario.mjs",
     "estudo": "node tools/estudo.mjs",
+    "mural": "node tools/mural.mjs",
     "telegram": "node tools/telegram.mjs",
     "enviar-dados": "node tools/enviar-dados.mjs",
     "contexto": "node tools/contexto.mjs",
