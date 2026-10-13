@@ -14,7 +14,17 @@ test('com DADOS_DIR os dados saem da pasta apontada (relativa ou absoluta)', () 
   assert.match(dadosUrl('carteira.json', { ddir: 'privado/' }).pathname, /painel-macro\/privado\/carteira\.json$/);
   assert.match(dadosUrl('diario/decisoes.md', { ddir: 'privado/' }).pathname, /privado\/diario\/decisoes\.md$/);
   assert.match(dadosUrl('estudo/respostas.md', { ddir: 'privado/' }).pathname, /privado\/estudo\/respostas\.md$/);
-  assert.match(dadosUrl('carteira.json', { ddir: 'C:/dados/x' }).pathname, /^\/C:\/dados\/x\/carteira\.json$/);
+
+  // Caminho absoluto: não pode ser resolvido contra a raiz do projeto (vale em qualquer plataforma).
+  const absoluto = dadosUrl('carteira.json', { ddir: '/dados/x' }).pathname;
+  assert.ok(absoluto.endsWith('/dados/x/carteira.json'), absoluto);
+  assert.ok(!absoluto.includes('painel-macro'), absoluto);
+
+  // No Windows, o caminho com letra de unidade também é absoluto (é o que o DADOS_DIR dos testes usa).
+  if (process.platform === 'win32') {
+    const comUnidade = dadosUrl('carteira.json', { ddir: 'C:/dados/x' }).pathname;
+    assert.ok(comUnidade.endsWith('/C:/dados/x/carteira.json'), comUnidade);
+  }
 });
 
 test('arquivo que falta não derruba quem só quer ler texto', async () => {
