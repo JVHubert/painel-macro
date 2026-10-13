@@ -22,6 +22,7 @@ import { numeroDaSemana } from '../relatorio.js';
 import { perguntaDaSemana, perguntaPorTexto } from '../trilha.js';
 import { mensagemDeResposta } from '../comandos.js';
 import { anotarResposta, gabaritoDaPergunta } from './anotar.mjs';
+import { baixar, encerrar, enviar } from './sincronizar.mjs';
 import { dadosUrl, lerTexto } from './arquivos.mjs';
 
 const ARQUIVO = dadosUrl('estudo/respostas.md');
@@ -40,13 +41,15 @@ const blocoDaSemana = (texto) =>
   lerEntradas(texto).find((entrada) => entrada.titulo === SEMANA) ?? null;
 
 const [, , comando, ...resto] = process.argv;
+// Antes de ler: o que foi anotado no Telegram (ou em outra m?quina) entra aqui.
+await baixar();
 const texto = await lerTexto(ARQUIVO);
 
 if (comando === 'novo') {
   if (blocoDaSemana(texto)) {
     console.log(`A semana ${SEMANA} já está no arquivo — responda no editor: estudo/respostas.md`);
     console.log('Ou responda por aqui: npm run estudo -- responder <a sua resposta>');
-    process.exit(0);
+    await encerrar('', 0);
   }
   const gabarito = await gabaritoDaPergunta(PERGUNTA);
   const bloco = criarBloco({
@@ -66,43 +69,43 @@ if (comando === 'novo') {
     console.log(`Gabarito guardado (${gabarito.toFixed(2)}): a correção não muda depois.`);
   }
   console.log('Responda primeiro sem ajuda; depois peça a correção com o PROMPT.md aberto.');
-  process.exit(0);
+  await encerrar('estudo: bloco da semana criado', 0);
 }
 
 if (comando === 'responder') {
   const resposta = resto.join(' ').trim();
   if (!resposta) {
     console.log('Escreva a sua resposta depois do comando. Exemplo: npm run estudo -- responder 1126,83');
-    process.exit(1);
+    await encerrar('', 1);
   }
   // A trilha manda: se o bloco foi criado com a pergunta de antes, ela é atualizada aqui.
   const resultado = await anotarResposta({ titulo: SEMANA, pergunta: PERGUNTA, resposta, hoje: HOJE });
   console.log(mensagemDeResposta({ tipo: 'resposta', ...resultado }));
-  if (resultado.recusada) process.exit(1);
+  if (resultado.recusada) await encerrar('', 1);
   console.log(`\nRegistrado no bloco "${SEMANA}" de estudo/respostas.md.`);
-  process.exit(0);
+  await encerrar('estudo: resposta da semana anotada', 0);
 }
 
 if (comando === 'revisar') {
   const resposta = resto.join(' ').trim();
   if (!resposta) {
     console.log('Escreva a sua resposta depois do comando. Exemplo: npm run estudo -- revisar 1126,83');
-    process.exit(1);
+    await encerrar('', 1);
   }
   const feitas = revisoesFeitas(lerEntradas(texto), SEMANA);
   if (feitas >= MAXIMO_DE_REVISOES) {
     console.log(`Você já fez as ${MAXIMO_DE_REVISOES} revisões desta semana. As outras voltam depois.`);
-    process.exit(0);
+    await encerrar('', 0);
   }
   const revisao = revisoesDaSemana(historicoDeEstudo(lerEntradas(texto)), HOJE)[0];
   if (!revisao) {
     console.log('Nenhuma revisão esperando esta semana. Veja o quadro: npm run estudo');
-    process.exit(0);
+    await encerrar('', 0);
   }
   const pergunta = perguntaPorTexto(revisao.pergunta);
   if (!pergunta) {
     console.log(`Não achei esta pergunta na trilha: ${revisao.pergunta}`);
-    process.exit(1);
+    await encerrar('', 1);
   }
   console.log(`Revisão: ${revisao.pergunta}`);
   const resultado = await anotarResposta({
@@ -113,9 +116,9 @@ if (comando === 'revisar') {
     hoje: HOJE,
   });
   console.log(mensagemDeResposta({ tipo: 'resposta', ...resultado }));
-  if (resultado.recusada) process.exit(1);
+  if (resultado.recusada) await encerrar('', 1);
   console.log(`\nRegistrado no bloco "${SEMANA} · revisão ${feitas + 1}" de estudo/respostas.md.`);
-  process.exit(0);
+  await encerrar('estudo: revisão anotada', 0);
 }
 
 console.log(

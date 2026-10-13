@@ -2,20 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { dadosUrl, lerJson, lerLista, lerTexto } from '../tools/arquivos.mjs';
 
-test('sem DADOS_DIR os dados saem da pasta do projeto', () => {
-  delete process.env.DADOS_DIR;
-  assert.match(dadosUrl('carteira.json').pathname, /painel-macro\/carteira\.json$/);
+test('sem DADOS_DIR os dados saem da raiz do projeto, ou do clone quando ele existe', () => {
+  assert.match(dadosUrl('carteira.json', { ddir: '', temClone: false }).pathname, /painel-macro\/carteira\.json$/);
+  assert.match(
+    dadosUrl('carteira.json', { ddir: '', temClone: true }).pathname,
+    /painel-macro\/\.privado\/carteira\.json$/,
+  );
 });
 
-test('com DADOS_DIR os dados saem da pasta privada', () => {
-  process.env.DADOS_DIR = 'privado/';
-  try {
-    assert.match(dadosUrl('carteira.json').pathname, /painel-macro\/privado\/carteira\.json$/);
-    assert.match(dadosUrl('diario/decisoes.md').pathname, /privado\/diario\/decisoes\.md$/);
-    assert.match(dadosUrl('estudo/respostas.md').pathname, /privado\/estudo\/respostas\.md$/);
-  } finally {
-    delete process.env.DADOS_DIR;
-  }
+test('com DADOS_DIR os dados saem da pasta apontada (relativa ou absoluta)', () => {
+  assert.match(dadosUrl('carteira.json', { ddir: 'privado/' }).pathname, /painel-macro\/privado\/carteira\.json$/);
+  assert.match(dadosUrl('diario/decisoes.md', { ddir: 'privado/' }).pathname, /privado\/diario\/decisoes\.md$/);
+  assert.match(dadosUrl('estudo/respostas.md', { ddir: 'privado/' }).pathname, /privado\/estudo\/respostas\.md$/);
+  assert.match(dadosUrl('carteira.json', { ddir: 'C:/dados/x' }).pathname, /^\/C:\/dados\/x\/carteira\.json$/);
 });
 
 test('arquivo que falta não derruba quem só quer ler texto', async () => {

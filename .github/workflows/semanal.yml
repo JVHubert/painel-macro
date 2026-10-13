@@ -51,16 +51,17 @@ jobs:
       - name: Conferir as contas
         run: npm test
 
-      - name: Usar a carteira do secret
+      - name: Usar a carteira do secret (só quando os dados privados não vieram)
+        if: hashFiles('privado/carteira.json') == ''
         env:
           CARTEIRA_JSON: ${{ secrets.CARTEIRA_JSON }}
         run: |
           if [ -z "$CARTEIRA_JSON" ]; then
-            echo "::error::crie o secret CARTEIRA_JSON com o conteúdo do seu carteira.json (ele é pessoal e não vai para o repositório)"
-            exit 1
+            echo "::warning::nem os dados privados nem o secret CARTEIRA_JSON chegaram: o relatório sai sem a carteira"
+            exit 0
           fi
           printf '%s\n' "$CARTEIRA_JSON" > carteira.json
-          echo "carteira.json veio do secret (não vai para o commit)"
+          echo "carteira.json veio do secret (reserva para quando o repositório privado não responde)"
 
       - name: Montar e enviar o relatório
         env:

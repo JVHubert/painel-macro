@@ -21,6 +21,7 @@ import { dadosUrl, lerJson, lerLista, lerTexto } from './arquivos.mjs';
 import { renderizar } from './imagem.mjs';
 import { cotacao, serieCdi } from './mercado.mjs';
 import { enviarFoto, enviarSemDerrubar } from './notificar.mjs';
+import { baixar, enviar } from './sincronizar.mjs';
 
 const DADOS = new URL('../dados/indicadores.json', import.meta.url);
 const CARTEIRA = dadosUrl('carteira.json');
@@ -41,6 +42,9 @@ try {
 } catch {
   // Sem arquivo local: no GitHub as variáveis vêm dos secrets.
 }
+
+// Antes de ler: o que foi anotado no Telegram (ou em outra máquina) entra no relatório de hoje.
+await baixar();
 
 function resumoDoCaderno(hoje, textoDoDiario, textoDoEstudo) {
   const decisoes = lerEntradas(textoDoDiario);
@@ -227,3 +231,6 @@ if (SECO) {
 } else if (!enviado) {
   await enviarSemDerrubar(texto, { titulo: 'Painel macro - relatorio semanal' });
 }
+
+// O histórico do patrimônio foi gravado hoje: guarda no repositório privado.
+if (!SECO) await enviar(`dados: relatório de ${HOJE}`);

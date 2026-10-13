@@ -271,14 +271,14 @@ Nada pessoal seu vive no repositório público:
 | `carteira.json` (reserva) | secret `CARTEIRA_JSON` |
 | `relatorios/` — histórico do que chegou | — (o histórico de verdade é o próprio Telegram) |
 
-As ferramentas leem os arquivos pessoais da pasta do projeto; quando a variável `DADOS_DIR` está
-definida (é o que o workflow faz, apontando para a pasta `privado/`), elas leem de lá. É assim que o
-relatório do GitHub enxerga o seu diário e a sua trilha.
+Os dados pessoais vivem no repositório privado, clonado em `.privado/` (fora do git). Os comandos
+leem e escrevem direto nessa pasta: `estudo`, `diario`, `relatorio`, `telegram`, `contexto` e
+`mural` baixam o que mudou antes de ler e enviam o que você anotou depois de escrever. O
+`npm run sincronizar` faz esse vai e volta na hora que você quiser. No GitHub, o workflow aponta
+`DADOS_DIR` para a cópia que ele mesmo clona e salva no fim da rodada.
 
-Quando mudar seus dados, rode `npm run enviar-dados`: ele copia `carteira.json`, o diário e o
-estudo para o repositório privado (que fica clonado em `.privado/`, também fora do git) e avisa
-se nada mudou. O que está no repositório público é código, indicadores públicos e o
-`carteira.example.json` sem número nenhum.
+O que está no repositório público é código, indicadores públicos e o `carteira.example.json` sem
+número nenhum.
 
 Se um dia colar um token em lugar público (chat, print, issue), revogue no `@BotFather` com `/revoke` e atualize o `.env.local` e o secret — o valor antigo deixa de valer na hora. O mesmo vale para o `DADOS_TOKEN`, que se revoga nas configurações do GitHub.
 
@@ -303,7 +303,7 @@ npm run diario    # diário de decisões: o que falta escrever e o que venceu
 npm run estudo    # pergunta da semana, respostas e aproveitamento
 npm run mural     # gera o mural de conquistas em 00 Outputs (arquivo local, nunca publicado)
 npm run telegram  # lê e responde o que chegou para o bot (/r, /d, /premio) e marca como lido
-npm run enviar-dados # manda carteira, diário e estudo para o repositório privado
+npm run sincronizar # baixa e envia os dados pessoais do repositório privado (.privado/)
 npm run contexto  # bloco de contexto para colar no professor de IA (sem número exato)
 npm run chat-id   # descobre o seu chat_id do Telegram (para o .env.local)
 npm run serve     # http://localhost:8080

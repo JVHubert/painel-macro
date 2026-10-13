@@ -13,7 +13,7 @@
     "estudo": "node tools/estudo.mjs",
     "mural": "node tools/mural.mjs",
     "telegram": "node tools/telegram.mjs",
-    "enviar-dados": "node tools/enviar-dados.mjs",
+    "sincronizar": "node tools/sincronizar.mjs",
     "contexto": "node tools/contexto.mjs",
     "chat-id": "node tools/chat-id.mjs",
     "serve": "node tools/servidor.mjs",

@@ -10,6 +10,7 @@ import { interpretarComando, ehDoChat, mensagemDeResposta } from '../comandos.js
 import { anotarDecisao, anotarPremio, anotarResposta } from './anotar.mjs';
 import { dadosUrl, lerJson } from './arquivos.mjs';
 import { enviar } from './notificar.mjs';
+import { baixar, enviar as sincronizar } from './sincronizar.mjs';
 
 // Segredos locais em .env.local (fora do git): no GitHub as variáveis vêm dos secrets.
 try {
@@ -64,6 +65,8 @@ async function executar(comando) {
 }
 
 const offset = await lerOffset();
+// Antes de anotar: o que já existe no repositório privado entra aqui (senão a resposta duplicaria).
+await baixar();
 const resposta = await fetch(
   `https://api.telegram.org/bot${TOKEN}/getUpdates?offset=${offset}&timeout=0`,
 );
@@ -93,3 +96,4 @@ for (const atualizacao of atualizacoes) {
 
 if (ultimoId + 1 > offset) await gravarOffset(ultimoId + 1);
 console.log(`${respondidos} comando(s) respondido(s), ${ignorados} mensagem(ns) de outra pessoa ignorada(s)`);
+if (respondidos) await sincronizar('dados: anotado pelo Telegram');

@@ -7,6 +7,7 @@ import { hojeEmBrasilia } from '../indicadores.js';
 import { mesesAte, parteDosJuros, situacaoDoJogo, trechosDoMural } from '../jogo.js';
 import { montarMural } from '../muralHtml.js';
 import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
+import { baixar } from './sincronizar.mjs';
 
 const CARTEIRA = dadosUrl('carteira.json');
 const HISTORICO = dadosUrl('jogo/historico.json');
@@ -14,6 +15,9 @@ const MURAL = dadosUrl('jogo/mural.md');
 const PAINEL = new URL('../dados/indicadores.json', import.meta.url);
 const SAIDA = new URL('../../../00 Outputs/', import.meta.url);
 const HOJE = hojeEmBrasilia();
+
+// Antes de ler: o mural e o histórico mais novos podem estar no Telegram ou no GitHub.
+await baixar();
 
 const carteira = await lerJson(
   CARTEIRA,

@@ -4,10 +4,14 @@ import { hojeEmBrasilia } from '../indicadores.js';
 import { lerEntradas } from '../caderno.js';
 import { blocoDeContexto } from '../contexto.js';
 import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
+import { baixar } from './sincronizar.mjs';
 
 const CARTEIRA = dadosUrl('carteira.json');
 const DIARIO = dadosUrl('diario/decisoes.md');
 const ESTUDO = dadosUrl('estudo/respostas.md');
+
+// Antes de ler: o diário e o estudo mais novos podem estar no Telegram.
+await baixar();
 
 const carteira = await lerJson(
   CARTEIRA,

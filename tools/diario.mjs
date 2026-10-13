@@ -8,6 +8,7 @@ import { mensagemDeResposta } from '../comandos.js';
 import { anotarDecisao } from './anotar.mjs';
 import { dadosUrl, lerTexto } from './arquivos.mjs';
 import { serieCdi, variacaoDesde } from './mercado.mjs';
+import { baixar, encerrar } from './sincronizar.mjs';
 
 const ARQUIVO = dadosUrl('diario/decisoes.md');
 const HOJE = hojeEmBrasilia();
@@ -21,6 +22,8 @@ if (comando === 'novo') {
     console.error('Diga o que você está decidindo: npm run diario -- novo "comprar mais RENT3"');
     process.exit(1);
   }
+  // Antes de escrever: o que foi anotado no Telegram entra aqui (senão a decisão duplicaria).
+  await baixar();
   const resultado = await anotarDecisao({ titulo, hoje: HOJE });
   if (resultado.recusada) {
     console.error(resultado.recusada);
@@ -28,9 +31,10 @@ if (comando === 'novo') {
   }
   console.log(`Bloco criado em diario/decisoes.md:\n\n${resultado.bloco}`);
   console.log(mensagemDeResposta({ tipo: 'decisao', ...resultado }));
-  process.exit(0);
+  await encerrar('diario: decisao nova', 0);
 }
 
+await baixar();
 const texto = await lerTexto(ARQUIVO);
 const entradas = lerEntradas(texto);
 const vencidas = entradas.filter((entrada) => situacao(entrada, HOJE).vencida);

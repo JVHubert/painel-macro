@@ -160,14 +160,14 @@ Get-Content carteira.json -Raw | & "C:\Program Files\GitHub CLI\gh.exe" secret s
 
 O `carteira.example.json` no repositório público é só o modelo, sem número nenhum.
 
-**Quando você mudar a carteira, o diário ou o estudo aqui no PC, rode:**
+**Os seus arquivos ficam num clone do repositório privado**, na pasta `.privado/` do projeto (fora do
+git). Os comandos cuidam do vai e volta sozinhos. Se quiser forçar na mão:
 
 ```powershell
-npm run enviar-dados
+npm run sincronizar
 ```
 
-Ele copia os três arquivos para o repositório privado e avisa se nada mudou. Se o comando
-reclamar de senha do GitHub, é só rodar de novo: o Windows abre a tela de login e guarda.
+Ele baixa o que foi anotado no Telegram (ou no GitHub) e envia o que você anotou aqui.
 
 ## Responder pelo Telegram
 
@@ -185,11 +185,10 @@ Para ele ler na hora, rode na sua máquina:
 
 ```powershell
 npm run telegram
-npm run enviar-dados
 ```
 
-O segundo comando é o que leva a sua resposta para o repositório privado — sem ele, o relatório de
-domingo não vê o que você respondeu. Quando quem responde é o workflow, esse passo é automático.
+O comando já baixa e envia os dados sozinho: o que você respondeu no celular aparece no PC e o que
+você anotou aqui chega ao relatório de domingo.
 
 ## Problemas comuns
 

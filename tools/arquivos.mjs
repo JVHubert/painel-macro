@@ -1,15 +1,28 @@
 // Leitura dos arquivos dos comandos locais: JSON com uma dica de erro e texto que pode faltar.
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
-// Onde ficam os dados pessoais: a pasta privada (DADOS_DIR) quando ela existe — é assim que o
-// relatório do GitHub enxerga o diário e o estudo — senão a raiz do projeto, que é o normal aqui.
-export function dadosUrl(caminho) {
-  const pasta = process.env.DADOS_DIR;
-  const raiz = pasta
-    ? pathToFileURL(`${pasta.replace(/[\\/]+$/, '')}/`)
-    : new URL('..', import.meta.url);
-  return new URL(caminho, raiz);
+const RAIZ = new URL('..', import.meta.url);
+const CLONE = new URL('../.privado/', import.meta.url);
+
+const existeClone = () => existsSync(new URL('.git/', CLONE));
+
+// Onde ficam os dados pessoais. Ordem: a pasta que o workflow aponta (DADOS_DIR), o clone do
+// repositório privado (`.privado/`, o normal no PC) e a raiz do projeto — que é onde os arquivos
+// viviam antes e continua valendo para quem ainda não migrou.
+export function pastaDeDados({ ddir = process.env.DADOS_DIR, temClone = existeClone() } = {}) {
+  const configurada = String(ddir ?? '').trim();
+  if (configurada) {
+    const caminho = configurada.replace(/[\\/]+$/, '');
+    const absoluto = /^([A-Za-z]:[\\/]|[\\/])/.test(caminho);
+    return absoluto ? pathToFileURL(`${caminho}/`) : new URL(`${caminho}/`, RAIZ);
+  }
+  return temClone ? CLONE : RAIZ;
+}
+
+export function dadosUrl(caminho, opcoes = {}) {
+  return new URL(caminho, pastaDeDados(opcoes));
 }
 
 export async function lerJson(url, dica) {
