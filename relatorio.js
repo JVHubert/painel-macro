@@ -434,6 +434,22 @@ const barraDeTexto = (fracao, largura = 18) => {
   return `[${'█'.repeat(preenchido)}${'░'.repeat(largura - preenchido)}]`;
 };
 
+// A comemoração: quando o marco é confirmado, ela vira o primeiro cartão do relatório.
+export function cartaoDaComemoracao(comemoracoes) {
+  if (!comemoracoes?.length) return null;
+  const linhas = [];
+  for (const comemoracao of comemoracoes) {
+    const nome = comemoracao.premio ? ` — ${comemoracao.premio}` : '';
+    linhas.push(
+      `Você passou de ${rotuloDoMarco(comemoracao.marco)} além da reserva! Prêmio liberado: até ${reais(
+        comemoracao.valorLiberado,
+      )}${nome} · compre até ${formatarData(comemoracao.prazo)}.`,
+    );
+  }
+  linhas.push('Depois de comprar, mande no Telegram: /premio <valor gasto> | <a frase que você quer guardar>');
+  return `🎉 MARCO BATIDO\n${linhas.join('\n')}`;
+}
+
 // O cartão do jogo dos marcos (F0.5c): a barra até o próximo marco, o que falta e o prêmio.
 export function cartaoDoJogo(jogo) {
   if (!jogo) return null;
@@ -467,6 +483,18 @@ export function cartaoDoJogo(jogo) {
 
   if (jogo.semHistorico) {
     linhas.push('(primeiro domingo do histórico: a confirmação do marco começa no próximo)');
+  }
+
+  const aberto = jogo.premioAberto;
+  if (aberto && !aberto.expirado) {
+    const nome = aberto.premio ? ` — ${aberto.premio}` : '';
+    linhas.push(
+      `Prêmio liberado: até ${reais(aberto.valorLiberado)}${nome} · compre até ${formatarData(
+        aberto.prazo,
+      )} (${plural(aberto.diasAteOPrazo, 'dia', 'dias')})`,
+    );
+  } else if (aberto?.expirado) {
+    linhas.push(`Prêmio do marco de ${rotuloDoMarco(aberto.marco)} expirou · o dinheiro fica investido`);
   }
 
   return `JOGO DOS MARCOS\n${linhas.join('\n')}`;
@@ -551,6 +579,9 @@ export function montarRelatorio(dados = {}) {
   const blocos = [
     `📊 Relatório semanal — ${formatarData(data)} · semana ${numeroDaSemana(data)}\n${fraseResumo(dados)}`,
   ];
+
+  const comemoracao = cartaoDaComemoracao(dados.jogo?.comemoracoes);
+  if (comemoracao) blocos.push(comemoracao);
 
   const semana = paraEstaSemana(dados);
   const itensDaSemana = semana.itens.map((item, i) => `${i + 1}. ${item}`);

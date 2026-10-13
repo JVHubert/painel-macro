@@ -501,6 +501,45 @@ test('o cartão cobra o prêmio e avisa o primeiro domingo do histórico', () =>
   assert.match(texto, /primeiro domingo do histórico/);
 });
 
+test('o prêmio liberado aparece com prazo, e o expirado sem bronca', () => {
+  const base = { proximoMarco: 40000, falta: 1000, percentual: 0.5, meses: 2, premio: { valor: 3000, item: null } };
+
+  const liberado = cartaoDoJogo({
+    ...base,
+    premioAberto: { marco: 25000, valorLiberado: 5000, premio: 'Tatuagem', prazo: '2026-12-10', expirado: false, diasAteOPrazo: 12 },
+  });
+  assert.match(liberado, /Prêmio liberado: até R\$ 5\.000,00 — Tatuagem · compre até 10\/12\/2026 \(12 dias\)/);
+
+  const expirado = cartaoDoJogo({
+    ...base,
+    premioAberto: { marco: 25000, valorLiberado: 5000, premio: 'Tatuagem', prazo: '2026-09-30', expirado: true, diasAteOPrazo: -13 },
+  });
+  assert.match(expirado, /Prêmio do marco de R\$ 25 mil expirou · o dinheiro fica investido/);
+});
+
+test('marco batido vira o primeiro cartão, com o prêmio e o prazo', () => {
+  const dados = {
+    data: '2026-10-11',
+    painel: PAINEL,
+    posicoes: [],
+    reserva: { alvoMeses: 6, detalhe: [{ nome: 'Caixinha X', saldo: 6000 }] },
+    custoMensal: 1000,
+  };
+
+  const texto = montarRelatorio({
+    ...dados,
+    jogo: {
+      comemoracoes: [{ marco: 25000, valorLiberado: 5000, premio: 'Exemplo de prêmio', prazo: '2026-12-10' }],
+    },
+  });
+
+  assert.match(
+    texto,
+    /MARCO BATIDO\nVocê passou de R\$ 25 mil além da reserva! Prêmio liberado: até R\$ 5\.000,00 — Exemplo de prêmio · compre até 10\/12\/2026\./,
+  );
+  assert.match(texto, /MARCO BATIDO[\s\S]*PARA ESTA SEMANA/);
+});
+
 test('quando a lista acaba, o cartão diz que é hora de escolher os próximos', () => {
   assert.match(cartaoDoJogo({ proximoMarco: null, percentual: 1 }), /Você passou do último marco da lista/);
   assert.equal(cartaoDoJogo(null), null);

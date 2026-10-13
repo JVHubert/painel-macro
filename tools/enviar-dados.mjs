@@ -10,7 +10,13 @@ import { dadosUrl, lerTexto } from './arquivos.mjs';
 
 const REPO = 'https://github.com/JVHubert/painel-macro-dados.git';
 const CLONE = new URL('../.privado/', import.meta.url);
-const ARQUIVOS = ['carteira.json', 'diario/decisoes.md', 'estudo/respostas.md', 'jogo/historico.json'];
+const ARQUIVOS = [
+  'carteira.json',
+  'diario/decisoes.md',
+  'estudo/respostas.md',
+  'jogo/historico.json',
+  'jogo/mural.md',
+];
 
 function git(args) {
   const resultado = spawnSync('git', args, { cwd: CLONE, encoding: 'utf8' });

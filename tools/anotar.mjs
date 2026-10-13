@@ -14,6 +14,7 @@ import {
   situacao,
 } from '../caderno.js';
 import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
+import { CAMPOS_MURAL, premioEmAberto, tituloDoMarco } from '../jogo.js';
 
 const PAINEL = new URL('../dados/indicadores.json', import.meta.url);
 
@@ -81,6 +82,29 @@ async function gravarResposta(arquivo, texto, titulo, campos, hoje) {
     arquivo,
     atualizado ?? adicionarBloco(texto, criarBloco({ data: hoje, titulo, campos, ordem: CAMPOS_RESPOSTA })),
   );
+}
+
+// Marca o prêmio de um marco como comprado (o que o /premio do Telegram faz).
+export async function anotarPremio({ valor, frase = '', hoje }) {
+  const arquivo = dadosUrl('jogo/mural.md');
+  const texto = await lerTexto(arquivo);
+  const aberto = premioEmAberto(lerEntradas(texto));
+  if (!aberto) return { recusada: 'Não achei nenhum prêmio liberado esperando compra.' };
+
+  const numero = lerNumeroBr(valor);
+  if (numero === null) {
+    return { recusada: `Não entendi o valor "${valor}". Escreva assim: /premio 4200,00 | a frase que você quer guardar` };
+  }
+
+  const atualizado = definirCampos(texto, {
+    titulo: tituloDoMarco(aberto.marco),
+    campos: { compradoEm: hoje, valorGasto: numero.toFixed(2), frase: String(frase ?? '').trim() },
+    ordem: CAMPOS_MURAL,
+  });
+  if (!atualizado) return { recusada: `Não achei o bloco do marco de ${aberto.marco} em jogo/mural.md.` };
+
+  await escrever(arquivo, atualizado);
+  return { marco: aberto.marco, valorLiberado: aberto.valorLiberado, valorGasto: numero, premio: aberto.premio, frase };
 }
 
 // Cria a decisão no diário (o que o `npm run diario -- novo` e o /d do Telegram fazem).

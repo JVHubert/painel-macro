@@ -177,6 +177,7 @@ Depois disso o bot também serve para você responder de volta, sem abrir o comp
 |---|---|
 | `/r 1126,83` | registra a sua resposta da pergunta da semana; se for de conta, você recebe o certo/errado na hora |
 | `/d comprar XPET4 \| a tese \| o que espero \| o que provaria que estou errado` | cria a decisão no diário, com revisão marcada para 90 dias |
+| `/premio 4200,00 \| valeu cada centavo` | fecha o prêmio de um marco batido: quanto você gastou e a frase que fica no mural |
 | `/ajuda` | mostra os comandos |
 
 O bot só olha se chegou algo quando o "Atualizar indicadores" roda (09:10 e 18:10 de Brasília).

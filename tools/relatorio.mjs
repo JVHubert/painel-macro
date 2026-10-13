@@ -6,7 +6,17 @@ import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostr
 import { alocacao, montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
-import { historicoAtualizado, mesesAte, parteDosJuros, situacaoDoJogo } from '../jogo.js';
+import {
+  historicoAtualizado,
+  mensagemDoMarco,
+  mesesAte,
+  muralComMarco,
+  parteDosJuros,
+  prazoDeCompra,
+  premioEmAberto,
+  regrasDoJogo,
+  situacaoDoJogo,
+} from '../jogo.js';
 import { dadosUrl, lerJson, lerLista, lerTexto } from './arquivos.mjs';
 import { renderizar } from './imagem.mjs';
 import { cotacao, serieCdi } from './mercado.mjs';
@@ -17,6 +27,7 @@ const CARTEIRA = dadosUrl('carteira.json');
 const DIARIO = dadosUrl('diario/decisoes.md');
 const ESTUDO = dadosUrl('estudo/respostas.md');
 const HISTORICO = dadosUrl('jogo/historico.json');
+const MURAL = dadosUrl('jogo/mural.md');
 const PASTA = new URL('../relatorios/', import.meta.url);
 const HOJE = hojeEmBrasilia();
 // `--seco` monta e salva o relatório sem enviar (para conferir a imagem antes de publicar).
@@ -136,8 +147,42 @@ const jogoDeHoje = situacaoDoJogo({
   metaDaReserva,
   hoje: HOJE,
 });
+const regras = regrasDoJogo(jogoDoArquivo);
+
+// Marco confirmado: entra no mural (uma vez só) e a comemoração sai como mensagem separada,
+// antes do relatório — o relatório da semana já vem mostrando o próximo marco.
+let mural = await lerTexto(MURAL);
+const comemoracoes = [];
+for (const confirmado of jogoDeHoje.confirmados) {
+  const premioDoMarco = confirmado.item?.nome ?? '';
+  mural = muralComMarco(mural, {
+    marco: confirmado.marco,
+    liberadoEm: HOJE,
+    valorLiberado: confirmado.valor,
+    premio: premioDoMarco,
+    prazoDias: regras.prazoDias,
+  });
+  comemoracoes.push({
+    marco: confirmado.marco,
+    valorLiberado: confirmado.valor,
+    premio: premioDoMarco,
+    prazo: prazoDeCompra(HOJE, regras.prazoDias),
+  });
+}
+if (comemoracoes.length) {
+  await mkdir(new URL('./', MURAL), { recursive: true });
+  await writeFile(MURAL, mural, 'utf8');
+  if (!SECO) {
+    for (const comemoracao of comemoracoes) {
+      await enviarSemDerrubar(mensagemDoMarco(comemoracao), { titulo: 'Painel macro - marco batido' });
+    }
+  }
+}
+
 dados.jogo = {
   ...jogoDeHoje,
+  comemoracoes,
+  premioAberto: premioEmAberto(lerEntradas(mural), { hoje: HOJE, prazoDias: regras.prazoDias }),
   semHistorico: historicoSalvo.length === 0,
   meses:
     jogoDeHoje.proximoMarco === null

@@ -1,6 +1,9 @@
 // O jogo dos marcos (seção 13): o que passa da reserva de emergência vale prêmio, e o sistema
 // mostra quanto falta e quanto do caminho vem dos juros, não do bolso.
 // Módulo puro: nenhuma leitura de arquivo, nenhuma rede.
+import { adicionarBloco, criarBloco, lerEntradas } from './caderno.js';
+import { formatarNumero } from './indicadores.js';
+
 export const MARCOS_PADRAO = [25000, 40000, 60000, 80000, 100000, 200000, 300000, 500000, 1000000];
 export const REGRA_PADRAO = { base: 'incremento', percentual: 0.2 };
 export const CONFIRMACOES_PADRAO = 2;
@@ -153,4 +156,80 @@ export function historicoAtualizado(historico = [], { data, patrimonio } = {}) {
   return [...historico.filter((registro) => registro?.data !== data), { data, patrimonio: valor }].sort(
     (a, b) => (a.data < b.data ? -1 : 1),
   );
+}
+
+// --- O mural: o que foi liberado, o que já foi comprado e a frase de cada marco (F0.5d) ---
+
+export const CAMPOS_MURAL = ['marco', 'liberadoEm', 'valorLiberado', 'premio', 'compradoEm', 'valorGasto', 'frase'];
+
+const somarDias = (dataIso, dias) =>
+  new Date(Date.parse(`${dataIso}T00:00:00Z`) + dias * 86400000).toISOString().slice(0, 10);
+
+const dataBr = (dataIso) => String(dataIso ?? '').split('-').reverse().join('/');
+
+export const tituloDoMarco = (marco) => `Marco de R$ ${formatarNumero(Number(marco), 0)}`;
+
+// O bloco do marco no mural, no mesmo formato do diário e do estudo. O prazo sai de `liberadoEm` +
+// `prazoDias`, então mudar a regra não deixa data velha escrita no arquivo.
+export function criarBlocoDoMural({ marco, liberadoEm, valorLiberado, premio, prazoDias = PRAZO_DIAS_PADRAO }) {
+  return criarBloco({
+    data: liberadoEm,
+    titulo: tituloDoMarco(marco),
+    campos: {
+      marco: String(marco),
+      liberadoEm,
+      valorLiberado: Number(valorLiberado ?? 0).toFixed(2),
+      premio: premio ?? '',
+      compradoEm: '',
+      valorGasto: '',
+      frase: '',
+    },
+    ordem: CAMPOS_MURAL,
+  });
+}
+
+// Cada marco entra no mural uma vez só, mesmo se o relatório rodar duas vezes no mesmo dia.
+export function muralComMarco(texto = '', { marco, liberadoEm, valorLiberado, premio, prazoDias = PRAZO_DIAS_PADRAO }) {
+  const jaTem = lerEntradas(texto).some((entrada) => Number(entrada?.campos?.marco) === Number(marco));
+  if (jaTem) return texto;
+  return adicionarBloco(texto, criarBlocoDoMural({ marco, liberadoEm, valorLiberado, premio, prazoDias }));
+}
+
+// O prazo de compra do prêmio: 60 dias depois de liberado (configurável no carteira.json).
+export const prazoDeCompra = (liberadoEm, prazoDias = PRAZO_DIAS_PADRAO) =>
+  somarDias(liberadoEm, Number(prazoDias) || PRAZO_DIAS_PADRAO);
+
+// O prêmio liberado que ainda espera compra (o mais antigo primeiro), com o prazo e o que falta.
+export function premioEmAberto(entradasDoMural = [], { hoje = null, prazoDias = PRAZO_DIAS_PADRAO } = {}) {
+  const abertos = entradasDoMural
+    .filter(
+      (entrada) =>
+        String(entrada?.campos?.marco ?? '').trim() && !String(entrada?.campos?.compradoEm ?? '').trim(),
+    )
+    .sort((a, b) => (String(a.campos.liberadoEm) < String(b.campos.liberadoEm) ? -1 : 1));
+
+  const aberto = abertos[0];
+  if (!aberto) return null;
+
+  const prazo = prazoDeCompra(aberto.campos.liberadoEm, prazoDias);
+  return {
+    marco: Number(aberto.campos.marco),
+    liberadoEm: aberto.campos.liberadoEm,
+    valorLiberado: Number(aberto.campos.valorLiberado) || 0,
+    premio: String(aberto.campos.premio ?? ''),
+    prazo,
+    expirado: Boolean(hoje && hoje > prazo),
+    diasAteOPrazo: hoje
+      ? Math.round((Date.parse(`${prazo}T00:00:00Z`) - Date.parse(`${hoje}T00:00:00Z`)) / 86400000)
+      : null,
+  };
+}
+
+// A comemoração vai como mensagem separada no Telegram, antes do relatório.
+export function mensagemDoMarco({ marco, valorLiberado, premio, prazo }) {
+  const nome = premio ? ` — ${premio}` : '';
+  return `🎉 Você passou de R$ ${formatarNumero(Number(marco), 0)} além da reserva! Prêmio liberado: até R$ ${formatarNumero(
+    Number(valorLiberado) || 0,
+    2,
+  )}${nome}. Você tem até ${dataBr(prazo)} para comprar.`;
 }

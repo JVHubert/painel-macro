@@ -131,6 +131,25 @@ function paraEstaSemanaHtml(dados) {
   return secao('Para esta semana', `${lista}<p class="pergunta">${pergunta}</p>${placar}`);
 }
 
+// A comemoração vem antes de tudo: é o único momento em que o dinheiro compra vontade.
+function comemoracaoHtml(comemoracoes) {
+  if (!comemoracoes?.length) return '';
+  const corpo = comemoracoes
+    .map((comemoracao) => {
+      const nome = comemoracao.premio ? ` — <span class="forte">${comemoracao.premio}</span>` : '';
+      return `<p class="jogo-linha">Você passou de <span class="forte">${rotuloDoMarco(
+        comemoracao.marco,
+      )}</span> além da reserva! Prêmio liberado: até ${reais(comemoracao.valorLiberado)}${nome} · compre até ${formatarData(
+        comemoracao.prazo,
+      )}.</p>`;
+    })
+    .join('');
+  return secao(
+    '🎉 Marco batido',
+    `${corpo}<p class="nota">Depois de comprar, mande no Telegram: /premio &lt;valor gasto&gt; | &lt;a frase que você quer guardar&gt;</p>`,
+  );
+}
+
 // O jogo dos marcos: a barra é o que faz o próximo prêmio parecer perto.
 function jogoHtml(dados) {
   const jogo = dados.jogo;
@@ -163,7 +182,18 @@ function jogoHtml(dados) {
     ? '<p class="nota">Primeiro domingo do histórico: a confirmação do marco começa no próximo.</p>'
     : '';
 
-  return secao('Jogo dos marcos', `${barra}${linhaDoMarco}${linhaDoPremio}${aviso}`);
+  const aberto = jogo.premioAberto;
+  const nomeDoPremio = aberto?.premio ? ` — <span class="forte">${aberto.premio}</span>` : '';
+  const linhaLiberada =
+    aberto && !aberto.expirado
+      ? `<p class="jogo-linha">Prêmio liberado: até ${reais(aberto.valorLiberado)}${nomeDoPremio} · compre até ${formatarData(
+          aberto.prazo,
+        )} (${aberto.diasAteOPrazo} ${aberto.diasAteOPrazo === 1 ? 'dia' : 'dias'})</p>`
+      : aberto?.expirado
+        ? `<p class="jogo-linha">Prêmio do marco de ${rotuloDoMarco(aberto.marco)} expirou · o dinheiro fica investido</p>`
+        : '';
+
+  return secao('Jogo dos marcos', `${barra}${linhaDoMarco}${linhaDoPremio}${linhaLiberada}${aviso}`);
 }
 
 function patrimonioHtml(dados) {
@@ -298,6 +328,7 @@ export function montarHtml(dados = {}) {
     `<header><h1>Relatório semanal</h1><p>${formatarData(data)} · semana ${numeroDaSemana(data)}</p><p class="resumo">${fraseResumo(
       dados,
     )}</p></header>`,
+    comemoracaoHtml(dados.jogo?.comemoracoes),
     paraEstaSemanaHtml(dados),
     jogoHtml(dados),
     patrimonioHtml(dados),

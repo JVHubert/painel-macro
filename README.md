@@ -239,6 +239,8 @@ Na correria do dia, dá para responder sem abrir o computador. Mande para o seu 
 - `/d` cria uma decisão no diário. Os campos vão separados por `|` (título, tese, o que espero,
   o que provaria que estou errado); o que você deixar de fora fica em branco, e o diário cobra
   depois. A revisão fica marcada para 90 dias.
+- `/premio 4200,00 | valeu cada centavo` fecha o prêmio de um marco batido: quanto você gastou e a
+  frase que fica no mural. Os dois campos vão separados por `|`, e a frase pode ficar de fora.
 - `/ajuda` mostra isso tudo de novo.
 - Mensagem de outra pessoa é ignorada em silêncio, e o bot responde só no seu chat.
 
@@ -265,7 +267,7 @@ Nada pessoal seu vive no repositório público:
 | Na sua máquina (fora do git) | No GitHub |
 |---|---|
 | `.env.local` — token do bot | secret `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` |
-| `carteira.json`, `diario/decisoes.md`, `estudo/respostas.md`, `jogo/historico.json` | repositório **privado** `JVHubert/painel-macro-dados` (lido com o token no secret `DADOS_TOKEN`) |
+| `carteira.json`, `diario/decisoes.md`, `estudo/respostas.md`, `jogo/historico.json`, `jogo/mural.md` | repositório **privado** `JVHubert/painel-macro-dados` (lido com o token no secret `DADOS_TOKEN`) |
 | `carteira.json` (reserva) | secret `CARTEIRA_JSON` |
 | `relatorios/` — histórico do que chegou | — (o histórico de verdade é o próprio Telegram) |
 

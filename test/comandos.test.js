@@ -105,3 +105,35 @@ test('a decisão registrada avisa o que falta e quando a revisão volta', () => 
     'Diga o que você está decidindo.',
   );
 });
+
+test('o /premio separa o valor gasto da frase', () => {
+  assert.deepEqual(interpretarComando('/premio 4200,00 | valeu cada centavo'), {
+    tipo: 'premio',
+    valor: '4200,00',
+    frase: 'valeu cada centavo',
+  });
+  assert.deepEqual(interpretarComando('/premio 4200'), { tipo: 'premio', valor: '4200', frase: '' });
+  assert.match(mensagemDeResposta(interpretarComando('/premio')), /faltou o valor gasto/);
+});
+
+test('a resposta do prêmio diz quanto ficou investido', () => {
+  const mensagem = mensagemDeResposta({
+    tipo: 'premio',
+    marco: 25000,
+    valorLiberado: 5000,
+    valorGasto: 4200,
+    premio: 'Tatuagem',
+    frase: 'valeu cada centavo',
+  });
+  assert.match(mensagem, /Prêmio do marco de R\$ 25\.000,00 registrado: R\$ 4\.200,00 gastos \(Tatuagem\)\./);
+  assert.match(mensagem, /Ficou investido: R\$ 800,00\./);
+  assert.match(mensagem, /Sua frase: "valeu cada centavo"/);
+
+  const passou = mensagemDeResposta({ tipo: 'premio', marco: 25000, valorLiberado: 5000, valorGasto: 5600 });
+  assert.match(passou, /Você passou do liberado \(R\$ 5\.000,00\) — a diferença saiu do bolso\./);
+
+  assert.equal(
+    mensagemDeResposta({ tipo: 'premio', recusada: 'Não achei nenhum prêmio liberado esperando compra.' }),
+    'Não achei nenhum prêmio liberado esperando compra.',
+  );
+});

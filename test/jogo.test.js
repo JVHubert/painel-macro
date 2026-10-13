@@ -1,17 +1,24 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  CAMPOS_MURAL,
   CONFIRMACOES_PADRAO,
   MARCOS_PADRAO,
   PRAZO_DIAS_PADRAO,
+  criarBlocoDoMural,
   historicoAtualizado,
+  mensagemDoMarco,
   mesesAte,
+  muralComMarco,
   parteDosJuros,
   premioDoMarco,
+  premioEmAberto,
   regrasDoJogo,
   situacaoDoJogo,
+  tituloDoMarco,
   valorDoPremio,
 } from '../jogo.js';
+import { definirCampos, lerEntradas } from '../caderno.js';
 
 const jogo = (extra = {}) => ({
   marcos: MARCOS_PADRAO,
@@ -195,3 +202,71 @@ test('quanto do caminho vem dos juros', () => {
     fracao: null,
   });
 });
+
+const blocoDoMarco = (extra = {}) => ({
+  marco: 25000,
+  liberadoEm: '2026-10-11',
+  valorLiberado: 5000,
+  premio: 'Exemplo de prêmio',
+  ...extra,
+});
+
+test('o bloco do mural nasce com os campos que o jogo cobra', () => {
+  const bloco = criarBlocoDoMural(blocoDoMarco());
+  assert.match(bloco, /^## 2026-10-11 · Marco de R\$ 25\.000/);
+  for (const campo of CAMPOS_MURAL) assert.ok(bloco.includes(`- ${campo}:`), `faltou o campo ${campo}`);
+  assert.match(bloco, /- valorLiberado: 5000\.00/);
+  assert.match(bloco, /- compradoEm:\s*\n/);
+});
+
+test('cada marco entra no mural uma vez só', () => {
+  const primeiro = muralComMarco('', blocoDoMarco());
+  assert.equal(muralComMarco(primeiro, blocoDoMarco()), primeiro);
+
+  const outro = muralComMarco(primeiro, blocoDoMarco({ marco: 40000, valorLiberado: 3000 }));
+  assert.equal(lerEntradas(outro).length, 2);
+});
+
+test('o prêmio em aberto tem prazo de 60 dias e expira sem bronca', () => {
+  const mural = lerEntradas(muralComMarco('', blocoDoMarco()));
+
+  const noPrazo = premioEmAberto(mural, { hoje: '2026-11-20' });
+  assert.equal(noPrazo.marco, 25000);
+  assert.equal(noPrazo.prazo, '2026-12-10');
+  assert.equal(noPrazo.expirado, false);
+  assert.equal(noPrazo.diasAteOPrazo, 20);
+
+  const depois = premioEmAberto(mural, { hoje: '2026-12-11' });
+  assert.equal(depois.expirado, true);
+  assert.equal(depois.diasAteOPrazo, -1);
+
+  assert.equal(premioEmAberto([], { hoje: '2026-11-20' }), null);
+});
+
+test('prêmio comprado sai da fila e o mais antigo vem primeiro', () => {
+  // O /premio do Telegram preenche o bloco assim: pelos campos, não criando outro.
+  const comprado = definirCampos(muralComMarco('', blocoDoMarco()), {
+    titulo: tituloDoMarco(25000),
+    campos: { compradoEm: '2026-11-01', valorGasto: '4200.00', frase: 'valeu cada centavo' },
+    ordem: CAMPOS_MURAL,
+  });
+  assert.equal(premioEmAberto(lerEntradas(comprado), { hoje: '2026-11-20' }), null);
+
+  const dois = muralComMarco(
+    muralComMarco('', blocoDoMarco()),
+    blocoDoMarco({ marco: 40000, liberadoEm: '2026-11-01' }),
+  );
+  assert.equal(premioEmAberto(lerEntradas(dois), { hoje: '2026-11-20' }).marco, 25000);
+});
+
+test('a mensagem da comemoração diz o prêmio e o prazo', () => {
+  assert.equal(
+    mensagemDoMarco({ marco: 25000, valorLiberado: 5000, premio: 'Exemplo de prêmio', prazo: '2026-12-10' }),
+    '🎉 Você passou de R$ 25.000 além da reserva! Prêmio liberado: até R$ 5.000,00 — Exemplo de prêmio. Você tem até 10/12/2026 para comprar.',
+  );
+  assert.match(
+    mensagemDoMarco({ marco: 40000, valorLiberado: 3000, premio: '', prazo: '2027-01-09' }),
+    /Prêmio liberado: até R\$ 3\.000,00\. Você tem até 09\/01\/2027/,
+  );
+});
+

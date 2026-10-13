@@ -7,7 +7,7 @@ import { hojeEmBrasilia } from '../indicadores.js';
 import { numeroDaSemana } from '../relatorio.js';
 import { perguntaDaSemana } from '../trilha.js';
 import { interpretarComando, ehDoChat, mensagemDeResposta } from '../comandos.js';
-import { anotarDecisao, anotarResposta } from './anotar.mjs';
+import { anotarDecisao, anotarPremio, anotarResposta } from './anotar.mjs';
 import { dadosUrl, lerJson } from './arquivos.mjs';
 import { enviar } from './notificar.mjs';
 
@@ -56,6 +56,9 @@ async function executar(comando) {
   }
   if (comando.tipo === 'decisao') {
     return { tipo: 'decisao', ...(await anotarDecisao({ ...comando, hoje: HOJE })) };
+  }
+  if (comando.tipo === 'premio') {
+    return { tipo: 'premio', ...(await anotarPremio({ ...comando, hoje: HOJE })) };
   }
   return comando;
 }
