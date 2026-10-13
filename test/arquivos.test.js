@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dadosUrl, lerJson, lerTexto } from '../tools/arquivos.mjs';
+import { dadosUrl, lerJson, lerLista, lerTexto } from '../tools/arquivos.mjs';
 
 test('sem DADOS_DIR os dados saem da pasta do projeto', () => {
   delete process.env.DADOS_DIR;
@@ -37,6 +37,32 @@ test('JSON com marca de ordem (BOM) é lido igual', async () => {
     await writeFile(arquivo, `\uFEFF${JSON.stringify({ receitaMensal: 7000 })}`, 'utf8');
     const lido = await lerJson(new URL(`file://${arquivo.replace(/\\/g, '/')}`), 'dica');
     assert.equal(lido.receitaMensal, 7000);
+  } finally {
+    await rm(pasta, { recursive: true, force: true });
+  }
+});
+
+test('lista que ainda não existe, ou quebrada, vira lista vazia', async () => {
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+
+  assert.deepEqual(await lerLista(new URL('../nao-existe.json', import.meta.url)), []);
+
+  const pasta = await mkdtemp(join(tmpdir(), 'painel-'));
+  const url = (nome) => new URL(`file://${join(pasta, nome).replace(/\\/g, '/')}`);
+  try {
+    await writeFile(url('vazio.json'), '', 'utf8');
+    assert.deepEqual(await lerLista(url('vazio.json')), []);
+
+    await writeFile(url('quebrado.json'), '{ isso não é json', 'utf8');
+    assert.deepEqual(await lerLista(url('quebrado.json')), []);
+
+    await writeFile(url('objeto.json'), '{"data":"2026-10-11"}', 'utf8');
+    assert.deepEqual(await lerLista(url('objeto.json')), []);
+
+    await writeFile(url('lista.json'), '[{"data":"2026-10-11","patrimonio":30000}]', 'utf8');
+    assert.deepEqual(await lerLista(url('lista.json')), [{ data: '2026-10-11', patrimonio: 30000 }]);
   } finally {
     await rm(pasta, { recursive: true, force: true });
   }

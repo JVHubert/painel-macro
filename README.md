@@ -264,7 +264,7 @@ Nada pessoal seu vive no repositório público:
 | Na sua máquina (fora do git) | No GitHub |
 |---|---|
 | `.env.local` — token do bot | secret `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` |
-| `carteira.json`, `diario/decisoes.md`, `estudo/respostas.md` | repositório **privado** `JVHubert/painel-macro-dados` (lido com o token no secret `DADOS_TOKEN`) |
+| `carteira.json`, `diario/decisoes.md`, `estudo/respostas.md`, `jogo/historico.json` | repositório **privado** `JVHubert/painel-macro-dados` (lido com o token no secret `DADOS_TOKEN`) |
 | `carteira.json` (reserva) | secret `CARTEIRA_JSON` |
 | `relatorios/` — histórico do que chegou | — (o histórico de verdade é o próprio Telegram) |
 

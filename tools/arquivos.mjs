@@ -30,3 +30,15 @@ export async function lerTexto(url) {
     return '';
   }
 }
+
+// Listas em arquivo que nasce vazio (o histórico do jogo): ausente ou quebrado vira lista vazia.
+export async function lerLista(url) {
+  const texto = (await lerTexto(url)).replace(/^\uFEFF/, '');
+  if (!texto.trim()) return [];
+  try {
+    const conteudo = JSON.parse(texto);
+    return Array.isArray(conteudo) ? conteudo : [];
+  } catch {
+    return [];
+  }
+}

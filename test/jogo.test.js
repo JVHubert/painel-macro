@@ -4,6 +4,7 @@ import {
   CONFIRMACOES_PADRAO,
   MARCOS_PADRAO,
   PRAZO_DIAS_PADRAO,
+  historicoAtualizado,
   mesesAte,
   parteDosJuros,
   premioDoMarco,
@@ -146,6 +147,31 @@ test('meses até o alvo, com a conta na mão no comentário', () => {
   assert.equal(mesesAte(900, 1000, 10, 0.1), 0);
   // Sem juros e sem aporte, o alvo nunca chega.
   assert.equal(mesesAte(1200, 1000, 0, 0), Infinity);
+});
+
+test('o histórico do jogo guarda um registro por dia, em ordem', () => {
+  const primeiro = historicoAtualizado([], { data: '2026-10-11', patrimonio: 30000 });
+  assert.deepEqual(primeiro, [{ data: '2026-10-11', patrimonio: 30000 }]);
+
+  // Rodar o relatório de novo no mesmo dia atualiza o registro, não cria um segundo.
+  const corrigido = historicoAtualizado(primeiro, { data: '2026-10-11', patrimonio: 31000 });
+  assert.deepEqual(corrigido, [{ data: '2026-10-11', patrimonio: 31000 }]);
+
+  // Registro mais antigo entra na frente, e lixo é ignorado.
+  const completo = historicoAtualizado(corrigido, { data: '2026-10-04', patrimonio: 20000 });
+  assert.deepEqual(completo, [
+    { data: '2026-10-04', patrimonio: 20000 },
+    { data: '2026-10-11', patrimonio: 31000 },
+  ]);
+  assert.deepEqual(historicoAtualizado(completo, { data: '', patrimonio: 5000 }), completo);
+  assert.deepEqual(historicoAtualizado(completo, { data: '2026-10-18', patrimonio: 'nada' }), completo);
+});
+
+test('a confirmação usa o histórico que o relatório salvou', () => {
+  const patrimonio = 30000;
+  const historico = historicoAtualizado([], { data: '2026-10-04', patrimonio });
+  const situacao = situacaoDoJogo({ jogo: jogo(), historico, patrimonio, hoje: '2026-10-11' });
+  assert.deepEqual(situacao.confirmados.map((item) => item.marco), [25000]);
 });
 
 test('quanto do caminho vem dos juros', () => {

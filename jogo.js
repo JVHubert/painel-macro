@@ -142,3 +142,15 @@ export function parteDosJuros(alvo, atual, aporteMensal = 0, taxaRealAnual = 0) 
   const juros = Math.max(0, caminho - aportado);
   return { meses, aportado, juros, fracao: caminho > 0 ? juros / caminho : 0 };
 }
+
+// A memória do jogo: um registro por dia de relatório, em ordem. Rodar o relatório de novo no mesmo
+// dia atualiza o registro daquele dia em vez de criar outro — dois registros no mesmo dia não podem
+// valer como dois domingos na confirmação do marco.
+export function historicoAtualizado(historico = [], { data, patrimonio } = {}) {
+  const valor = Number(patrimonio);
+  if (!data || !Number.isFinite(valor)) return [...historico];
+
+  return [...historico.filter((registro) => registro?.data !== data), { data, patrimonio: valor }].sort(
+    (a, b) => (a.data < b.data ? -1 : 1),
+  );
+}

@@ -3,10 +3,11 @@
 //      npm run relatorio -- --seco (monta e salva, mas não envia nada)
 import { mkdir, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
-import { montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
+import { alocacao, montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
-import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
+import { historicoAtualizado } from '../jogo.js';
+import { dadosUrl, lerJson, lerLista, lerTexto } from './arquivos.mjs';
 import { renderizar } from './imagem.mjs';
 import { cotacao, serieCdi } from './mercado.mjs';
 import { enviarFoto, enviarSemDerrubar } from './notificar.mjs';
@@ -15,6 +16,7 @@ const DADOS = new URL('../dados/indicadores.json', import.meta.url);
 const CARTEIRA = dadosUrl('carteira.json');
 const DIARIO = dadosUrl('diario/decisoes.md');
 const ESTUDO = dadosUrl('estudo/respostas.md');
+const HISTORICO = dadosUrl('jogo/historico.json');
 const PASTA = new URL('../relatorios/', import.meta.url);
 const HOJE = hojeEmBrasilia();
 // `--seco` monta e salva o relatório sem enviar (para conferir a imagem antes de publicar).
@@ -122,6 +124,18 @@ const texto = montarRelatorio(dados);
 await mkdir(PASTA, { recursive: true });
 await writeFile(new URL(`${HOJE}.md`, PASTA), `${texto}\n`, 'utf8');
 console.log(`relatório salvo em relatorios/${HOJE}.md`);
+
+// O jogo dos marcos precisa da memória do patrimônio: é ela que confirma um marco em dois domingos
+// seguidos, e não um pico do mercado. Um registro por dia de relatório.
+const patrimonio = alocacao(dados).total;
+const historico = historicoAtualizado(await lerLista(HISTORICO), { data: HOJE, patrimonio });
+await mkdir(new URL('./', HISTORICO), { recursive: true });
+await writeFile(HISTORICO, `${JSON.stringify(historico, null, 2)}\n`, 'utf8');
+console.log(
+  MOSTRAR_DETALHE
+    ? `jogo: ${historico.length} registro(s) no histórico, patrimônio R$ ${patrimonio}`
+    : `jogo: ${historico.length} registro(s) no histórico`,
+);
 
 // A imagem (com cor de verdade) é o canal principal; o texto é a reserva.
 let enviado = null;
