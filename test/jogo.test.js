@@ -30,9 +30,10 @@ test('sem config, valem os padrões decididos em 11/10/2026', () => {
 });
 
 test('o prêmio segue a tabela da 13.1 nas três regras', () => {
-  const decidida = [5000, 5000, 10000, 20000, 20000, 40000, 100000];
-  const dez = [2500, 2500, 5000, 10000, 10000, 20000, 50000];
-  const acumulado = [5000, 10000, 20000, 40000, 60000, 100000, 200000];
+  // Lista decidida pelo JV em 13/10/2026: degraus de 15 e 20 mil até 100 mil.
+  const decidida = [5000, 3000, 4000, 4000, 4000, 20000, 20000, 40000, 100000];
+  const dez = [2500, 1500, 2000, 2000, 2000, 10000, 10000, 20000, 50000];
+  const acumulado = [5000, 8000, 12000, 16000, 20000, 40000, 60000, 100000, 200000];
   const todos = (regra) => MARCOS_PADRAO.map((_, indice) => valorDoPremio({ marcos: MARCOS_PADRAO, regra }, indice));
 
   assert.deepEqual(todos({ base: 'incremento', percentual: 0.2 }), decidida);
@@ -65,9 +66,9 @@ test('o marco só libera com dois domingos seguidos acima dele', () => {
     { marco: 25000, em: '2026-10-11', valor: 5000, item: null },
   ]);
   assert.equal(confirmado.ultimoMarco, 25000);
-  assert.equal(confirmado.proximoMarco, 50000);
-  assert.equal(confirmado.falta, 19000);
-  assert.equal(confirmado.percentual, 6000 / 25000);
+  assert.equal(confirmado.proximoMarco, 40000);
+  assert.equal(confirmado.falta, 9000);
+  assert.equal(confirmado.percentual, 6000 / 15000);
 });
 
 test('cair e voltar não libera o mesmo marco duas vezes', () => {
@@ -85,7 +86,7 @@ test('cair e voltar não libera o mesmo marco duas vezes', () => {
   // O marco já tinha sido confirmado no primeiro par de domingos: não é novidade hoje.
   assert.deepEqual(situacao.confirmados, []);
   assert.equal(situacao.ultimoMarco, 25000);
-  assert.equal(situacao.proximoMarco, 50000);
+  assert.equal(situacao.proximoMarco, 40000);
 });
 
 test('a reserva de emergência fica fora do jogo e o jogo nunca fica negativo', () => {

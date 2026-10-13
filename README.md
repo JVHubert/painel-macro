@@ -115,7 +115,16 @@ Sempre que mudar seus números, rode esse comando de novo (o arquivo local conti
   },
   "posicoes": [
     { "ticker": "RENT3", "quantidade": 100, "precoMedio": 30.00, "dataCompra": "2025-10-01" }
-  ]
+  ],
+  "jogo": {
+    "marcos": [25000, 40000, 60000, 80000, 100000, 200000, 300000, 500000, 1000000],
+    "regra": { "base": "incremento", "percentual": 0.2 },
+    "confirmacoes": 2,
+    "prazoDias": 60,
+    "premios": [
+      { "marco": 25000, "nome": "Exemplo de prêmio", "preco": 0, "tipo": "simbolo", "porque": "uma frase" }
+    ]
+  }
 }
 ```
 
@@ -124,6 +133,9 @@ Sempre que mudar seus números, rode esse comando de novo (o arquivo local conti
 - `taxaCDI` é o que o produto promete (`1.2` = 120% do CDI), para conferir depois se pagou mesmo.
 - O total da reserva é a soma dos saldos (não precisa manter um total à mão).
 - `dataCompra` da ação está na nota de corretagem; sem ela não dá para comparar com o CDI.
+- `jogo` é o jogo dos marcos: o que passar da reserva de emergência vale prêmio. `marcos` é a lista
+  de patrimônio, `regra` é o tamanho do prêmio (20% do que entrou desde o marco anterior) e `premios`
+  é o que você escolheu comprar em cada um. Sem `jogo` no arquivo, valem os valores padrão.
 
 ### Onde receber
 

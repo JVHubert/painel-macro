@@ -1,7 +1,7 @@
 // O jogo dos marcos (seção 13): o que passa da reserva de emergência vale prêmio, e o sistema
 // mostra quanto falta e quanto do caminho vem dos juros, não do bolso.
 // Módulo puro: nenhuma leitura de arquivo, nenhuma rede.
-export const MARCOS_PADRAO = [25000, 50000, 100000, 200000, 300000, 500000, 1000000];
+export const MARCOS_PADRAO = [25000, 40000, 60000, 80000, 100000, 200000, 300000, 500000, 1000000];
 export const REGRA_PADRAO = { base: 'incremento', percentual: 0.2 };
 export const CONFIRMACOES_PADRAO = 2;
 export const PRAZO_DIAS_PADRAO = 60;
