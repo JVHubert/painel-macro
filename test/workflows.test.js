@@ -39,3 +39,16 @@ test('quem salva no repositório privado usa o mesmo grupo de espera, sem cancel
 
   assert.ok(alguemSalva, 'nenhum workflow salva no repositório privado');
 });
+
+test('o token dos dados privados não fica exposto aos scripts do npm ci', async () => {
+  for (const { nome, texto } of await lerWorkflows()) {
+    const posicaoDoPrivado = texto.indexOf('repository: JVHubert/painel-macro-dados');
+    const posicaoDoNpmCi = texto.indexOf('npm ci');
+    if (posicaoDoPrivado === -1 || posicaoDoNpmCi === -1) continue;
+
+    assert.ok(
+      posicaoDoNpmCi < posicaoDoPrivado,
+      `${nome}: o checkout do privado (com o token) acontece antes do npm ci, que roda scripts de terceiros`,
+    );
+  }
+});

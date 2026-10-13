@@ -23,6 +23,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # O `npm ci` roda scripts de instalação de terceiros. O checkout dos dados privados (que guarda
+      # o DADOS_TOKEN no .git/config da pasta) vem depois dele, para não deixar a credencial à mão
+      # desses scripts.
+      - name: Instalar as dependências
+        run: npm ci
+
       # A carteira, o diário e o estudo vivem num repositório privado. Sem o token DADOS_TOKEN
       # (ou se ele ainda não existir), o relatório sai igual, só sem as partes pessoais.
       - name: Trazer os dados privados, quando o token existir
@@ -41,13 +51,6 @@ jobs:
           else
             echo "sem os dados privados nesta execução: sigo com o secret CARTEIRA_JSON"
           fi
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Instalar as dependências
-        run: npm ci
 
       - name: Atualizar os indicadores
         run: node tools/coletar.mjs
