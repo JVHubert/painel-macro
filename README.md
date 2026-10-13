@@ -33,6 +33,7 @@ Primeira vez configurando o Telegram? Siga o [COMO-CONFIGURAR-O-BOT.md](COMO-CON
 | `sw.js` | guarda a casca no aparelho; o JSON vem da rede primeiro, com a cópia local de reserva |
 | `.github/workflows/atualizar.yml` | duas vezes ao dia: coleta, testa, commita o JSON e publica |
 | `.github/workflows/semanal.yml` | domingo 18h: monta, envia e arquiva o relatório |
+| `.github/workflows/telegram.yml` | a cada 20 minutos: lê o que chegou no Telegram e salva no repositório privado |
 
 HTML, CSS e JavaScript puros, sem etapa de build. O site **não** chama API nenhuma direto: ele lê o JSON que o robô já gerou. Isso resolve CORS, dispensa chave de API e deixa o painel abrir offline.
 
@@ -244,10 +245,9 @@ Na correria do dia, dá para responder sem abrir o computador. Mande para o seu 
 - `/ajuda` mostra isso tudo de novo.
 - Mensagem de outra pessoa é ignorada em silêncio, e o bot responde só no seu chat.
 
-O bot **não fica escutando**: ele olha se chegou algo quando o workflow "Atualizar indicadores"
-roda (duas vezes por dia, 09:10 e 18:10 de Brasília). Se quiser que ele leia na hora, rode
-`npm run telegram` na sua máquina — e depois `npm run enviar-dados`, para o que você respondeu
-no celular não ficar só lá.
+O bot **não fica escutando em tempo real**: há um workflow só para isso, o "Ler o Telegram",
+que olha se chegou algo a cada 20 minutos e guarda no repositório privado. Se quiser que ele leia
+na hora, rode `npm run telegram` na sua máquina — o comando já baixa e envia os dados sozinho.
 
 Ordem sugerida para os primeiros blocos (um por semana, no ritmo da pergunta que chega):
 

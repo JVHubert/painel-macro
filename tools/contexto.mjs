@@ -30,4 +30,5 @@ const bloco = blocoDeContexto({
 });
 
 console.log(bloco);
-console.log('\n(é este bloco que você cola no começo da conversa com o professor de IA)');
+// O aviso vai para a saída de erro: quem copia o bloco com `| clip` leva só o bloco.
+console.error('\n(é este bloco que você cola no começo da conversa com o professor de IA)');

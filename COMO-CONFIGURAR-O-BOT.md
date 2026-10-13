@@ -180,8 +180,8 @@ Depois disso o bot também serve para você responder de volta, sem abrir o comp
 | `/premio 4200,00 \| valeu cada centavo` | fecha o prêmio de um marco batido: quanto você gastou e a frase que fica no mural |
 | `/ajuda` | mostra os comandos |
 
-O bot só olha se chegou algo quando o "Atualizar indicadores" roda (09:10 e 18:10 de Brasília).
-Para ele ler na hora, rode na sua máquina:
+O bot olha se chegou algo a cada 20 minutos (é o workflow "Ler o Telegram", só para isso).
+Se não quiser esperar, rode na sua máquina:
 
 ```powershell
 npm run telegram
@@ -201,7 +201,7 @@ você anotou aqui chega ao relatório de domingo.
 | Chega na sua máquina mas não no GitHub | secrets não criados no repositório | Parte 6, `gh secret set` |
 | O workflow não roda no domingo | agendamento desativado por 60 dias sem atividade | Actions → "Relatório semanal" → **Enable workflow** |
 | `Nenhuma mensagem encontrada` no `chat-id` | o `oi` não foi enviado | Parte 2 |
-| Mandei `/r` e o bot não respondeu | ele só olha a caixa de entrada quando o workflow roda | espere a próxima rodada (09:10 ou 18:10) ou rode `npm run telegram` |
+| Mandei `/r` e o bot não respondeu | ele lê a caixa de entrada a cada 20 minutos | espere a próxima rodada ou rode `npm run telegram` |
 | O bot disse que o bloco já tem resposta | você já respondeu essa semana | troque a resposta no arquivo `estudo/respostas.md` |
 | `403 Proibido` ao buscar cotação | o Yahoo bloqueou temporariamente | roda de novo mais tarde; o relatório segue com os outros dados |
 
