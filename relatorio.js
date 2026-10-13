@@ -32,6 +32,14 @@ export function numeroDaSemana(dataIso) {
   return Math.ceil(((data - inicio) / 86400000 + 1) / 7);
 }
 
+// O ano da semana ISO, que não é sempre o ano da data: 03/01/2027 ainda é a semana 53 de 2026.
+export function anoDaSemana(dataIso) {
+  const [ano, mes, dia] = dataIso.split('-').map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  data.setUTCDate(data.getUTCDate() + 4 - (data.getUTCDay() || 7));
+  return data.getUTCFullYear();
+}
+
 // Variação do último ponto contra o ponto mais recente até N dias atrás.
 export function variacaoPeriodo(serie, dias) {
   if (!Array.isArray(serie) || serie.length < 2) return null;

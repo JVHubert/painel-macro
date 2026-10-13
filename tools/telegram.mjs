@@ -3,12 +3,13 @@
 //   npm run telegram
 // Nada do conteúdo aparece no log (regra S3): aqui só sai contagem.
 import { mkdir, writeFile } from 'node:fs/promises';
+import { acharBlocoDaSemana, tituloDaSemana } from '../caderno.js';
 import { hojeEmBrasilia } from '../indicadores.js';
 import { numeroDaSemana } from '../relatorio.js';
 import { perguntaDaSemana } from '../trilha.js';
 import { interpretarComando, ehDoChat, mensagemDeResposta } from '../comandos.js';
 import { anotarDecisao, anotarPremio, anotarResposta } from './anotar.mjs';
-import { dadosUrl, lerJson } from './arquivos.mjs';
+import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
 import { enviar } from './notificar.mjs';
 import { baixar, enviar as sincronizar } from './sincronizar.mjs';
 
@@ -22,8 +23,9 @@ try {
 const TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const OFFSET = dadosUrl('telegram.json');
+const ESTUDO = dadosUrl('estudo/respostas.md');
 const HOJE = hojeEmBrasilia();
-const SEMANA = String(numeroDaSemana(HOJE));
+const SEMANA = tituloDaSemana(HOJE);
 
 if (!TOKEN || !CHAT) {
   console.log('sem TELEGRAM_TOKEN e TELEGRAM_CHAT_ID: nada a fazer');
@@ -50,9 +52,12 @@ async function executar(comando) {
     if (!pergunta) {
       return { tipo: 'resposta', recusada: 'Não achei a pergunta desta semana na trilha.' };
     }
+    // Se a semana já tem bloco (mesmo no título antigo, só com o número), a resposta entra nele.
+    const entradas = lerEntradas(await lerTexto(ESTUDO));
+    const titulo = acharBlocoDaSemana(entradas, HOJE)?.titulo ?? SEMANA;
     return {
       tipo: 'resposta',
-      ...(await anotarResposta({ titulo: SEMANA, pergunta, resposta: comando.resposta, hoje: HOJE })),
+      ...(await anotarResposta({ titulo, pergunta, resposta: comando.resposta, hoje: HOJE })),
     };
   }
   if (comando.tipo === 'decisao') {

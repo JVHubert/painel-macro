@@ -9,6 +9,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import {
   CAMPOS_RESPOSTA,
   MAXIMO_DE_REVISOES,
+  acharBlocoDaSemana,
   adicionarBloco,
   criarBloco,
   historicoDeEstudo,
@@ -16,6 +17,7 @@ import {
   painelDoEstudo,
   revisoesDaSemana,
   revisoesFeitas,
+  tituloDaSemana,
 } from '../caderno.js';
 import { hojeEmBrasilia } from '../indicadores.js';
 import { numeroDaSemana } from '../relatorio.js';
@@ -29,7 +31,8 @@ const ARQUIVO = dadosUrl('estudo/respostas.md');
 const PASTA = dadosUrl('estudo/');
 const DIARIO = dadosUrl('diario/decisoes.md');
 const HOJE = hojeEmBrasilia();
-const SEMANA = String(numeroDaSemana(HOJE));
+const SEMANA = tituloDaSemana(HOJE);
+const NUMERO_DA_SEMANA = numeroDaSemana(HOJE);
 const PERGUNTA = perguntaDaSemana(HOJE);
 
 async function escrever(texto) {
@@ -37,8 +40,8 @@ async function escrever(texto) {
   await writeFile(ARQUIVO, texto, 'utf8');
 }
 
-const blocoDaSemana = (texto) =>
-  lerEntradas(texto).find((entrada) => entrada.titulo === SEMANA) ?? null;
+// O bloco desta semana pode estar no título novo (`2026-S42`) ou no antigo, só com o número (`42`).
+const blocoDaSemana = (texto) => acharBlocoDaSemana(lerEntradas(texto), HOJE);
 
 const [, , comando, ...resto] = process.argv;
 // Antes de ler: o que foi anotado no Telegram (ou em outra m?quina) entra aqui.
@@ -78,11 +81,13 @@ if (comando === 'responder') {
     console.log('Escreva a sua resposta depois do comando. Exemplo: npm run estudo -- responder 1126,83');
     await encerrar('', 1);
   }
+  // Se a semana já tem bloco (mesmo no título antigo), a resposta entra nele.
+  const titulo = blocoDaSemana(texto)?.titulo ?? SEMANA;
   // A trilha manda: se o bloco foi criado com a pergunta de antes, ela é atualizada aqui.
-  const resultado = await anotarResposta({ titulo: SEMANA, pergunta: PERGUNTA, resposta, hoje: HOJE });
+  const resultado = await anotarResposta({ titulo, pergunta: PERGUNTA, resposta, hoje: HOJE });
   console.log(mensagemDeResposta({ tipo: 'resposta', ...resultado }));
   if (resultado.recusada) await encerrar('', 1);
-  console.log(`\nRegistrado no bloco "${SEMANA}" de estudo/respostas.md.`);
+  console.log(`\nRegistrado no bloco "${titulo}" de estudo/respostas.md.`);
   await encerrar('estudo: resposta da semana anotada', 0);
 }
 
@@ -92,7 +97,7 @@ if (comando === 'revisar') {
     console.log('Escreva a sua resposta depois do comando. Exemplo: npm run estudo -- revisar 1126,83');
     await encerrar('', 1);
   }
-  const feitas = revisoesFeitas(lerEntradas(texto), SEMANA);
+  const feitas = revisoesFeitas(lerEntradas(texto), HOJE);
   if (feitas >= MAXIMO_DE_REVISOES) {
     console.log(`Você já fez as ${MAXIMO_DE_REVISOES} revisões desta semana. As outras voltam depois.`);
     await encerrar('', 0);
@@ -125,7 +130,7 @@ console.log(
   painelDoEstudo({
     texto,
     hoje: HOJE,
-    numeroSemana: SEMANA,
+    numeroSemana: NUMERO_DA_SEMANA,
     pergunta: PERGUNTA.texto,
     textoDoDiario: await lerTexto(DIARIO),
   }),

@@ -4,6 +4,7 @@ import {
   CAMPOS_DECISAO,
   CAMPOS_RESPOSTA,
   MAXIMO_DE_REVISOES,
+  acharBlocoDaSemana,
   adicionarBloco,
   corrigirConta,
   criarBloco,
@@ -18,8 +19,10 @@ import {
   painelDoEstudo,
   placar,
   revisoesDaSemana,
+  revisoesFeitas,
   situacao,
   textoDaCorrecao,
+  tituloDaSemana,
 } from '../caderno.js';
 
 const EXEMPLO = `# Diário de decisões
@@ -285,6 +288,36 @@ test('pergunta respondida de novo depois do vencimento sai da fila', () => {
   assert.deepEqual(historico[0].datas, ['2026-01-01', '2026-01-12']);
   assert.deepEqual(historico[0].resultados, ['errado']);
   assert.equal(revisoesDaSemana(historico, '2026-01-20').length, 0);
+});
+
+test('o título do bloco da semana carrega o ano ISO', () => {
+  assert.equal(tituloDaSemana('2026-10-13'), '2026-S42');
+  // A semana 53 de 2026 termina em 03/01/2027: a virada do ano não pode trocar o bloco.
+  assert.equal(tituloDaSemana('2026-12-28'), '2026-S53');
+  assert.equal(tituloDaSemana('2027-01-03'), '2026-S53');
+  assert.equal(tituloDaSemana('2027-01-04'), '2027-S01');
+});
+
+test('o bloco antigo, só com o número, continua sendo encontrado', () => {
+  const antigo = lerEntradas('## 2026-10-13 · 42\n- pergunta: X\n- resposta: 1\n');
+  assert.equal(acharBlocoDaSemana(antigo, '2026-10-13')?.titulo, '42');
+  // O "42" de 2026 não serve para a semana 42 de 2027.
+  assert.equal(acharBlocoDaSemana(antigo, '2027-10-13'), null);
+
+  const novo = lerEntradas('## 2026-10-13 · 2026-S42\n- pergunta: X\n- resposta: 1\n');
+  assert.equal(acharBlocoDaSemana(novo, '2026-10-13')?.titulo, '2026-S42');
+
+  assert.equal(acharBlocoDaSemana([], '2026-10-13'), null);
+});
+
+test('as revisões da semana contam pelo título novo e pelo antigo', () => {
+  const texto = [
+    '## 2026-10-13 · 2026-S42 · revisão 1\n- pergunta: A\n- resposta: 1\n',
+    '## 2026-10-13 · 42 · revisão 2\n- pergunta: B\n- resposta: 2\n',
+  ].join('\n');
+
+  assert.equal(revisoesFeitas(lerEntradas(texto), '2026-10-13'), 2);
+  assert.equal(revisoesFeitas(lerEntradas(texto), '2026-10-20'), 0);
 });
 
 test('o painel do estudo mostra as revisões que venceram', () => {

@@ -11,7 +11,7 @@
 //   - revisado:
 //
 // Este módulo só lê, escreve e formata — sem rede e sem disco, testável com `node --test`.
-import { deslocarDias, tabela } from './relatorio.js';
+import { anoDaSemana, deslocarDias, numeroDaSemana, tabela } from './relatorio.js';
 import { formatarData, formatarNumero, formatarPercentual, nivelDeResultado } from './indicadores.js';
 import { TRILHA } from './trilha.js';
 
@@ -180,10 +180,31 @@ export function revisoesDaSemana(historico = [], hoje = null) {
     .slice(0, MAXIMO_DE_REVISOES);
 }
 
+// O título do bloco da semana: ano e semana ISO (`2026-S42`). Sem o ano, a semana 42 de 2027 cairia
+// no mesmo bloco da de 2026 e a resposta seria recusada como já registrada.
+export function tituloDaSemana(dataIso) {
+  return `${anoDaSemana(dataIso)}-S${String(numeroDaSemana(dataIso)).padStart(2, '0')}`;
+}
+
+// O bloco da semana: o título novo (`2026-S42`) ou o antigo, que era só o número (`42`) e vale só
+// para o ano da data do próprio bloco.
+export function acharBlocoDaSemana(entradas = [], dataIso) {
+  const titulo = tituloDaSemana(dataIso);
+  const antigo = String(numeroDaSemana(dataIso));
+  return (
+    entradas.find((entrada) => entrada?.titulo === titulo) ??
+    entradas.find(
+      (entrada) => entrada?.titulo === antigo && String(entrada.data ?? '').startsWith(titulo.slice(0, 4)),
+    ) ??
+    null
+  );
+}
+
 // Quantas revisões já entraram no arquivo nesta semana (o limite é por semana, não por chamada).
-export function revisoesFeitas(entradas = [], numeroSemana) {
-  const marca = `${numeroSemana} · revisão`;
-  return entradas.filter((entrada) => String(entrada?.titulo ?? '').startsWith(marca)).length;
+export function revisoesFeitas(entradas = [], dataIso) {
+  const marcas = [`${tituloDaSemana(dataIso)} · revisão`, `${numeroDaSemana(dataIso)} · revisão`];
+  return entradas.filter((entrada) => marcas.some((marca) => String(entrada?.titulo ?? '').startsWith(marca)))
+    .length;
 }
 
 // Placar de aprendizado (9.4): uma linha só. O estudo conta as últimas 8 semanas; o diário entra
@@ -351,7 +372,7 @@ export function painelDoEstudo({ texto, hoje, numeroSemana, pergunta, textoDoDia
   }
 
   // A matéria que volta: pergunta errada aparece de novo depois de um tempo (9.3).
-  const feitasNestaSemana = revisoesFeitas(entradas, numeroSemana);
+  const feitasNestaSemana = revisoesFeitas(entradas, hoje);
   const vencidas = revisoesDaSemana(historicoDeEstudo(entradas), hoje);
   const revisoes = vencidas.slice(0, Math.max(0, MAXIMO_DE_REVISOES - feitasNestaSemana));
   if (revisoes.length) {

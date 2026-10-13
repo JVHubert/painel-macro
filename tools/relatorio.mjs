@@ -5,7 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
 import { alocacao, montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
 import { montarHtml } from '../relatorioHtml.js';
-import { lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
+import { acharBlocoDaSemana, lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
 import {
   historicoAtualizado,
   mensagemDoMarco,
@@ -49,7 +49,7 @@ await baixar();
 function resumoDoCaderno(hoje, textoDoDiario, textoDoEstudo) {
   const decisoes = lerEntradas(textoDoDiario);
   const respostas = lerEntradas(textoDoEstudo);
-  const daSemana = respostas.find((entrada) => entrada.titulo === String(numeroDaSemana(hoje)));
+  const daSemana = acharBlocoDaSemana(respostas, hoje);
   return {
     decisoesVencidas: decisoes.filter((entrada) => situacao(entrada, hoje).vencida).length,
     decisoesSemTese: decisoes.filter((entrada) => !entrada.campos.tese).length,
