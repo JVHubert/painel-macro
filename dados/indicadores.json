@@ -1,5 +1,5 @@
 {
-  "atualizadoEm": "2026-10-13T03:23:31.807Z",
+  "atualizadoEm": "2026-10-13T19:13:17.777Z",
   "indicadores": [
     {
       "id": "meta-selic",
@@ -409,17 +409,13 @@
       "nome": "Dólar",
       "unidade": "",
       "prefixoValor": "R$ ",
-      "valor": 4.9892,
+      "valor": 5.0096,
       "referencia": "2026-10-09",
       "fonte": "BACEN · SGS 1",
-      "variacao": -0.00452922045531623,
+      "variacao": 0.004088831876853938,
       "rotuloVariacao": "no dia",
       "extra": null,
       "serie": [
-        {
-          "data": "2026-08-07",
-          "valor": 5.0908
-        },
         {
           "data": "2026-08-10",
           "valor": 5.0963
@@ -595,6 +591,10 @@
         {
           "data": "2026-10-09",
           "valor": 4.9892
+        },
+        {
+          "data": "2026-10-13",
+          "valor": 5.0096
         }
       ],
       "sobre": "Preço do dólar. Serve de termômetro de risco e é a base do custo de qualquer investimento lá fora."
