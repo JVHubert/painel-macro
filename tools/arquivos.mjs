@@ -55,3 +55,13 @@ export async function lerLista(url) {
     return [];
   }
 }
+
+// JSON que pode ainda não existir (a config da trilha no carteira.json): ausente vira o padrão.
+export async function lerJsonOu(url, padrao = {}) {
+  try {
+    const conteudo = JSON.parse((await lerTexto(url)).replace(/^\uFEFF/, '') || 'null');
+    return conteudo ?? padrao;
+  } catch {
+    return padrao;
+  }
+}

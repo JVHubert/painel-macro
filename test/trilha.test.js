@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { INICIO_TRILHA, TRILHA, ehPerguntaDeSimulacao, nivelDaTrilha, perguntaDaSemana, perguntaPorTexto } from '../trilha.js';
+import { INICIO_TRILHA, TRILHA, ehPerguntaDeSimulacao, nivelDaTrilha, opcoesDaTrilha, perguntaDaSemana, perguntaPorTexto } from '../trilha.js';
 
 const painel = (valores) => ({ indicadores: Object.entries(valores).map(([id, valor]) => ({ id, valor })) });
 const gabarito = (id) => TRILHA[0].perguntas.find((pergunta) => pergunta.id === id).gabarito;
@@ -48,6 +48,22 @@ test('nível que ainda não foi escrito usa o último que existe', () => {
   assert.equal(nivelDaTrilha(1).nome, 'Fundamentos');
   assert.equal(nivelDaTrilha(2).nivel, 1);
   assert.equal(idDaSemana('2026-10-11', { nivelAtual: 3 }), 'n1-01');
+});
+
+test('o nível atual vem do carteira.json', () => {
+  assert.deepEqual(opcoesDaTrilha(), { nivelAtual: 1, inicioTrilha: INICIO_TRILHA });
+  assert.deepEqual(opcoesDaTrilha({ trilha: { nivelAtual: 2, inicioNivel: '2027-01-04' } }), {
+    nivelAtual: 2,
+    inicioTrilha: '2027-01-04',
+  });
+  // Config estranha não derruba: volta para o começo da trilha.
+  assert.deepEqual(opcoesDaTrilha({ trilha: { nivelAtual: 'x' } }), { nivelAtual: 1, inicioTrilha: INICIO_TRILHA });
+
+  // Nível 2 (ainda não escrito) com o nível começando em 04/01/2027: a sequência recomeça na
+  // primeira pergunta do último nível que existe.
+  assert.equal(idDaSemana('2027-01-04', opcoesDaTrilha({ trilha: { nivelAtual: 2, inicioNivel: '2027-01-04' } })), 'n1-01');
+  // A mesma data no Nível 1, que começou em 11/10/2026, já está na quinta pergunta.
+  assert.equal(idDaSemana('2027-01-04', opcoesDaTrilha({ trilha: { nivelAtual: 1, inicioNivel: '2026-10-11' } })), 'n1-05');
 });
 
 test('as contas de gabarito dão os números esperados', () => {

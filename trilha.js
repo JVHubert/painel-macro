@@ -95,6 +95,15 @@ export function nivelDaTrilha(nivel = TRILHA[0].nivel) {
   return TRILHA.find((item) => item.nivel === nivel) ?? TRILHA.at(-1);
 }
 
+// A config da trilha vive no carteira.json (`trilha`): em que nível o JV está e quando o nível
+// atual começou. Ao mudar de nível, a sequência de perguntas recomeça em `inicioNivel`.
+export function opcoesDaTrilha(carteira = {}) {
+  return {
+    nivelAtual: Number(carteira?.trilha?.nivelAtual) || TRILHA[0].nivel,
+    inicioTrilha: carteira?.trilha?.inicioNivel || INICIO_TRILHA,
+  };
+}
+
 // O simulador do painel ajuda a responder as perguntas que comparam rendimentos na mesma conta.
 const PALAVRAS_DO_SIMULADOR = ['poupança', 'CDB'];
 

@@ -1,15 +1,14 @@
-// Lê o que chegou para o bot e responde os comandos /r e /d.
-// Roda sozinho no workflow "Atualizar indicadores" (2×/dia) e, para conferir, na sua máquina:
+// Lê o que chegou para o bot e responde os comandos /r, /d e /premio.
+// Roda sozinho no workflow "Telegram" (a cada 20 minutos) e, para conferir, na sua máquina:
 //   npm run telegram
 // Nada do conteúdo aparece no log (regra S3): aqui só sai contagem.
 import { mkdir, writeFile } from 'node:fs/promises';
 import { acharBlocoDaSemana, tituloDaSemana } from '../caderno.js';
 import { hojeEmBrasilia } from '../indicadores.js';
-import { numeroDaSemana } from '../relatorio.js';
-import { perguntaDaSemana } from '../trilha.js';
+import { perguntaDaSemana, opcoesDaTrilha } from '../trilha.js';
 import { interpretarComando, ehDoChat, mensagemDeResposta } from '../comandos.js';
 import { anotarDecisao, anotarPremio, anotarResposta } from './anotar.mjs';
-import { dadosUrl, lerJson, lerTexto } from './arquivos.mjs';
+import { dadosUrl, lerJson, lerJsonOu, lerTexto } from './arquivos.mjs';
 import { enviar } from './notificar.mjs';
 import { baixar, enviar as sincronizar } from './sincronizar.mjs';
 
@@ -24,8 +23,11 @@ const TOKEN = process.env.TELEGRAM_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const OFFSET = dadosUrl('telegram.json');
 const ESTUDO = dadosUrl('estudo/respostas.md');
+const CARTEIRA = dadosUrl('carteira.json');
 const HOJE = hojeEmBrasilia();
 const SEMANA = tituloDaSemana(HOJE);
+// Em que nível da trilha o JV está vem do carteira.json (`trilha.nivelAtual`).
+const TRILHA = opcoesDaTrilha(await lerJsonOu(CARTEIRA));
 
 if (!TOKEN || !CHAT) {
   console.log('sem TELEGRAM_TOKEN e TELEGRAM_CHAT_ID: nada a fazer');
@@ -48,7 +50,7 @@ async function gravarOffset(valor) {
 
 async function executar(comando) {
   if (comando.tipo === 'resposta') {
-    const pergunta = perguntaDaSemana(HOJE);
+    const pergunta = perguntaDaSemana(HOJE, TRILHA);
     if (!pergunta) {
       return { tipo: 'resposta', recusada: 'Não achei a pergunta desta semana na trilha.' };
     }

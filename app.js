@@ -10,7 +10,6 @@ import {
   resumoDoPainel,
   simulacao,
 } from './indicadores.js';
-import { ehPerguntaDeSimulacao, perguntaDaSemana } from './trilha.js';
 
 const $ = (id) => document.getElementById(id);
 const listaEl = $('indicadores');
@@ -21,7 +20,6 @@ const mesesEl = $('meses');
 const percentualCdiEl = $('percentual-cdi');
 const resultadoEl = $('resultado');
 const notaPoupancaEl = $('nota-poupanca');
-const perguntaSemanaEl = $('pergunta-semana');
 
 // A ordem da tela: o juro real primeiro, porque é o número que muda a vida de quem poupa.
 const ORDEM_DOS_CARTOES = ['juro-real', 'meta-selic', 'cdi', 'ipca', 'dolar'];
@@ -112,14 +110,8 @@ function renderizarSimulacao() {
     : '';
 }
 
-// A pergunta da semana vem da trilha: quando o simulador ajuda a respondê-la, ele avisa.
-function mostrarPerguntaDaSemana() {
-  const pergunta = perguntaDaSemana(hojeEmBrasilia());
-  perguntaSemanaEl.textContent = ehPerguntaDeSimulacao(pergunta)
-    ? `Isso responde a pergunta da semana: “${pergunta.texto}”`
-    : '';
-}
-
+// Esta página é pública: ela não sabe em que nível da trilha você está, então não mostra a pergunta
+// da semana (isso é do relatório e do `npm run estudo`).
 async function carregar() {
   situacaoEl.textContent = 'Carregando…';
   try {
@@ -145,7 +137,6 @@ valorEl.addEventListener('input', renderizarSimulacao);
 mesesEl.addEventListener('change', renderizarSimulacao);
 percentualCdiEl.addEventListener('input', renderizarSimulacao);
 $('legenda').textContent = legendaNiveis();
-mostrarPerguntaDaSemana();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => null);

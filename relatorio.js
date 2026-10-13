@@ -388,8 +388,7 @@ export function fraseResumo(dados = {}) {
 }
 
 // Até 3 ações para a semana, em ordem de prioridade, mais a pergunta do estudo.
-export function paraEstaSemana(dados = {}) {
-  const itens = [];
+export function paraEstaSemana(dados = {}) {  const itens = [];
   const custo = Number(dados.custoMensal) || 0;
   const alvo = Number(dados.reserva?.alvoMeses) || 6;
   const meses = mesesDeReserva(dados);
@@ -421,7 +420,7 @@ export function paraEstaSemana(dados = {}) {
     itens.push('A resposta da semana continua vazia.');
   }
 
-  return { itens, pergunta: perguntaDaSemana(dados.data)?.texto ?? '' };
+  return { itens, pergunta: perguntaDaSemana(dados.data, dados.trilha)?.texto ?? '' };
 }
 
 // O marco na língua de quem lê: 25000 vira R$ 25 mil, 1000000 vira R$ 1 milhão.

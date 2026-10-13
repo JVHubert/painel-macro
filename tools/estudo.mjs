@@ -21,19 +21,19 @@ import {
 } from '../caderno.js';
 import { hojeEmBrasilia } from '../indicadores.js';
 import { numeroDaSemana } from '../relatorio.js';
-import { perguntaDaSemana, perguntaPorTexto } from '../trilha.js';
+import { perguntaDaSemana, perguntaPorTexto, opcoesDaTrilha } from '../trilha.js';
 import { mensagemDeResposta } from '../comandos.js';
 import { anotarResposta, gabaritoDaPergunta } from './anotar.mjs';
-import { baixar, encerrar, enviar } from './sincronizar.mjs';
-import { dadosUrl, lerTexto } from './arquivos.mjs';
+import { baixar, encerrar } from './sincronizar.mjs';
+import { dadosUrl, lerJsonOu, lerTexto } from './arquivos.mjs';
 
 const ARQUIVO = dadosUrl('estudo/respostas.md');
 const PASTA = dadosUrl('estudo/');
 const DIARIO = dadosUrl('diario/decisoes.md');
+const CARTEIRA = dadosUrl('carteira.json');
 const HOJE = hojeEmBrasilia();
 const SEMANA = tituloDaSemana(HOJE);
 const NUMERO_DA_SEMANA = numeroDaSemana(HOJE);
-const PERGUNTA = perguntaDaSemana(HOJE);
 
 async function escrever(texto) {
   await mkdir(PASTA, { recursive: true });
@@ -44,9 +44,11 @@ async function escrever(texto) {
 const blocoDaSemana = (texto) => acharBlocoDaSemana(lerEntradas(texto), HOJE);
 
 const [, , comando, ...resto] = process.argv;
-// Antes de ler: o que foi anotado no Telegram (ou em outra m?quina) entra aqui.
+// Antes de ler: o que foi anotado no Telegram (ou em outra máquina) entra aqui.
 await baixar();
 const texto = await lerTexto(ARQUIVO);
+// Em que nível da trilha o JV está vem do carteira.json (`trilha.nivelAtual`).
+const PERGUNTA = perguntaDaSemana(HOJE, opcoesDaTrilha(await lerJsonOu(CARTEIRA)));
 
 if (comando === 'novo') {
   if (blocoDaSemana(texto)) {

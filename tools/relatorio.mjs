@@ -4,6 +4,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
 import { alocacao, montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
+import { opcoesDaTrilha } from '../trilha.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { acharBlocoDaSemana, lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
 import {
@@ -133,6 +134,8 @@ const dados = {
   aporteMensal: carteira.aporteMensal,
   avisos,
   caderno: resumoDoCaderno(HOJE, await lerTexto(DIARIO), await lerTexto(ESTUDO)),
+  // O nível da trilha vem do carteira.json: é o que faz a sequência de perguntas mudar de nível.
+  trilha: opcoesDaTrilha(carteira),
 };
 
 // O jogo dos marcos precisa da memória do patrimônio: é ela que confirma o marco em dois domingos
