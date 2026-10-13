@@ -11,7 +11,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: semanal
+  # Mesmo grupo de quem salva no repositório privado: o relatório espera a vez do bot, e não
+  # acontecem dois pushes ao mesmo tempo. `cancel-in-progress: false` porque perder o relatório no
+  # meio seria pior que esperar.
+  group: privado
+  cancel-in-progress: false
 
 jobs:
   relatorio:

@@ -1,0 +1,58 @@
+# O bot tem que ser rápido: você espera a correção do /r, e o Telegram só guarda mensagem não lida
+# por 24 h. Este workflow não roda testes nem mexe no site — só lê o que chegou, anota e salva.
+name: Telegram
+
+on:
+  schedule:
+    - cron: '*/20 * * * *' # a cada 20 minutos
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Mesmo grupo dos outros que salvam no repositório privado: um push de cada vez.
+concurrency:
+  group: privado
+  cancel-in-progress: false
+
+jobs:
+  ler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Buscar os dados privados
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          repository: JVHubert/painel-macro-dados
+          token: ${{ secrets.DADOS_TOKEN }}
+          path: privado
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Ler o que chegou no Telegram
+        if: hashFiles('privado/carteira.json') != ''
+        env:
+          DADOS_DIR: privado/
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/telegram.mjs
+
+      - name: Guardar no repositório privado
+        if: hashFiles('privado/carteira.json') != ''
+        run: |
+          set -euo pipefail
+          cd privado
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "nada novo no repositório privado"
+            exit 0
+          fi
+          git commit -m "dados: anotado pelo Telegram"
+          git pull --rebase
+          git push
