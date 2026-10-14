@@ -10,8 +10,8 @@ Você já criou o seu bot. Se precisar criar outro:
 
 1. No Telegram, busque **@BotFather** (o oficial tem selo de verificado) e toque em **START**.
 2. Mande `/newbot`.
-3. Escolha o nome que aparece na conversa (ex.: `Painel macro`).
-4. Escolha o usuário: precisa ser único no mundo e terminar em `bot` (ex.: `jv_painel_macro_bot`).
+3. Escolha o nome que aparece na conversa (ex.: `Panorama Financeiro`).
+4. Escolha o usuário: precisa ser único no mundo e terminar em `bot` (ex.: `jv_panorama_financeiro_bot`).
 5. O BotFather responde com `Use this token to access the HTTP API:` e uma linha assim: `123456789:AAF...`. **Esse é o token** — toque e segure para copiar.
 
 Opcional, para ficar apresentável: `/setdescription`, `/setuserpic`, `/setcommands`.
@@ -31,7 +31,7 @@ Sem isso, o envio falha com `400 Bad Request: chat not found`. Não é problema 
 No PowerShell:
 
 ```powershell
-cd C:\AI\painel-macro
+cd "C:\AI\2026.10.11 Panorama Financeiro\01 Projeto\panorama-financeiro"
 npm.cmd run chat-id
 ```
 
@@ -52,7 +52,7 @@ Se aparecer "Nenhuma mensagem encontrada": você ainda não mandou o `oi` (Parte
 
 ## Parte 4 — Salve na sua máquina
 
-Abra `C:\AI\painel-macro\.env.local` no VS Code. O token já está lá; falta o id:
+Abra `C:\AI\2026.10.11 Panorama Financeiro\01 Projeto\panorama-financeiro\.env.local` no VS Code. O token já está lá; falta o id:
 
 ```
 TELEGRAM_TOKEN=123456789:AAF...
@@ -76,14 +76,14 @@ Se aparecer `relatório enviado por tela`, o `TELEGRAM_CHAT_ID` está vazio ou o
 Você já está logado no `gh` (conta **JVHubert**), então são 4 comandos.
 
 ```powershell
-cd C:\AI\painel-macro
+cd "C:\AI\2026.10.11 Panorama Financeiro\01 Projeto\panorama-financeiro"
 git init -b main
 git add -A
-git commit -m "painel macro: site, coleta diária e relatório semanal"
+git commit -m "panorama financeiro: site, coleta diária e relatório semanal"
 ```
 
 ```powershell
-& "C:\Program Files\GitHub CLI\gh.exe" repo create painel-macro --public --source=. --remote=origin --push
+& "C:\Program Files\GitHub CLI\gh.exe" repo create panorama-financeiro --public --source=. --remote=origin --push
 ```
 
 ```powershell
@@ -96,7 +96,7 @@ git commit -m "painel macro: site, coleta diária e relatório semanal"
 Ligue o site no GitHub Pages (equivalente a Settings → Pages → Source: GitHub Actions):
 
 ```powershell
-& "C:\Program Files\GitHub CLI\gh.exe" api -X POST repos/JVHubert/painel-macro/pages -f build_type=workflow
+& "C:\Program Files\GitHub CLI\gh.exe" api -X POST repos/JVHubert/panorama-financeiro/pages -f build_type=workflow
 ```
 
 Rode o relatório agora, à mão, para não esperar até domingo:
@@ -143,10 +143,10 @@ token na sua conta):
    aparece na tela enquanto você cola — é de propósito):
 
 ```powershell
-& "C:\Program Files\GitHub CLI\gh.exe" secret set DADOS_TOKEN --repo JVHubert/painel-macro
+& "C:\Program Files\GitHub CLI\gh.exe" secret set DADOS_TOKEN --repo JVHubert/panorama-financeiro
 ```
 
-   O mesmo pelo site: https://github.com/JVHubert/painel-macro/settings/secrets/actions →
+   O mesmo pelo site: https://github.com/JVHubert/panorama-financeiro/settings/secrets/actions →
    **New repository secret** → Name `DADOS_TOKEN` → Secret: o token → **Add secret**.
 
 Feito isso, o relatório de domingo passa a ler o diário e a trilha do repositório privado — é assim

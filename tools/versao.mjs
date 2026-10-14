@@ -10,7 +10,7 @@ export function nomeDaVersao(arquivos = []) {
     resumo.update(`${caminho}\0`);
     resumo.update(conteudo);
   }
-  return `painel-macro-${resumo.digest('hex').slice(0, 8)}`;
+  return `panorama-financeiro-${resumo.digest('hex').slice(0, 8)}`;
 }
 
 // Troca a linha da versão dentro do sw.js publicado. Se a linha não estiver lá, é melhor

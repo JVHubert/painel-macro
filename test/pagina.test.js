@@ -59,15 +59,15 @@ test('a versão do service worker sai do conteúdo da casca', () => {
     { caminho: 'style.css', conteudo: 'três' },
   ]);
 
-  assert.match(a, /^painel-macro-[0-9a-f]{8}$/);
+  assert.match(a, /^panorama-financeiro-[0-9a-f]{8}$/);
   assert.equal(a, mesmaCoisaEmOutraOrdem);
   assert.notEqual(a, outroConteudo);
 });
 
 test('a troca da versão no sw.js reclama se a linha não estiver lá', () => {
-  const sw = "const VERSAO = 'painel-macro-dev';\n";
-  assert.match(trocarVersao(sw, 'painel-macro-1234abcd'), /const VERSAO = 'painel-macro-1234abcd';/);
-  assert.throws(() => trocarVersao('sw.js sem a linha da versão', 'painel-macro-1234abcd'));
+  const sw = "const VERSAO = 'panorama-financeiro-dev';\n";
+  assert.match(trocarVersao(sw, 'panorama-financeiro-1234abcd'), /const VERSAO = 'panorama-financeiro-1234abcd';/);
+  assert.throws(() => trocarVersao('sw.js sem a linha da versão', 'panorama-financeiro-1234abcd'));
 });
 
 test('o painel publicado tem os mesmos arquivos do repositório', async () => {

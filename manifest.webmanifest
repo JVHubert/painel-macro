@@ -1,6 +1,6 @@
 {
-  "name": "Painel macro",
-  "short_name": "Painel macro",
+  "name": "Panorama Financeiro",
+  "short_name": "Panorama",
   "description": "Selic, CDI, IPCA e dólar num painel simples, com o que cada número significa.",
   "lang": "pt-BR",
   "id": "./",

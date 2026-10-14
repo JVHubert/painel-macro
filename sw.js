@@ -1,7 +1,7 @@
 // Guarda a casca do painel no aparelho e mantém o JSON de indicadores sempre fresco.
 // A versão de verdade sai do conteúdo dos arquivos na publicação (tools/publicar.mjs); este
 // nome aqui só vale para quem abre o site direto da pasta do repositório.
-const VERSAO = 'painel-macro-dev';
+const VERSAO = 'panorama-financeiro-dev';
 const ARQUIVOS = [
   './',
   'index.html',

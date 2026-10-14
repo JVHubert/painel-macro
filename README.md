@@ -1,4 +1,4 @@
-# Painel macro
+# Panorama Financeiro
 
 Selic, CDI, IPCA e dólar num painel que abre no celular, funciona offline e se atualiza sozinho duas vezes por dia.
 

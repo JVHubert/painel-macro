@@ -186,7 +186,7 @@ if (!SECO) {
     await mkdir(new URL('./', MURAL), { recursive: true });
     await writeFile(MURAL, mural, 'utf8');
     for (const comemoracao of comemoracoes) {
-      await enviarSemDerrubar(mensagemDoMarco(comemoracao), { titulo: 'Painel macro - marco batido' });
+      await enviarSemDerrubar(mensagemDoMarco(comemoracao), { titulo: 'Panorama Financeiro - marco batido' });
     }
   }
   await mkdir(new URL('./', HISTORICO), { recursive: true });
@@ -235,7 +235,7 @@ try {
 if (SECO) {
   console.log('modo seco: nada enviado');
 } else if (!enviado) {
-  await enviarSemDerrubar(texto, { titulo: 'Painel macro - relatorio semanal' });
+  await enviarSemDerrubar(texto, { titulo: 'Panorama Financeiro - relatorio semanal' });
 }
 
 // O histórico do patrimônio foi gravado hoje: guarda no repositório privado.

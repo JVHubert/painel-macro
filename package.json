@@ -1,5 +1,5 @@
 {
-  "name": "painel-macro",
+  "name": "panorama-financeiro",
   "version": "1.0.0",
   "description": "Painel de indicadores econômicos (Selic, CDI, IPCA, dólar) que abre no celular, funciona offline e se atualiza sozinho.",
   "type": "module",

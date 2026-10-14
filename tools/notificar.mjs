@@ -5,7 +5,7 @@ import { podeMostrarDetalhe } from '../indicadores.js';
 
 const LIMITE_TELEGRAM = 4000;
 
-export async function enviar(texto, { titulo = 'Painel macro' } = {}) {
+export async function enviar(texto, { titulo = 'Panorama Financeiro' } = {}) {
   const token = process.env.TELEGRAM_TOKEN;
   const chat = process.env.TELEGRAM_CHAT_ID;
   if (token && chat) return enviarTelegram(texto, { token, chat });
