@@ -1,5 +1,5 @@
 # Publica o painel no GitHub Pages a cada merge na main.
-# Endereço: https://jvhubert.github.io/painel-macro/
+# Endereço: https://jvhubert.github.io/panorama-financeiro/
 name: Site (GitHub Pages)
 
 on:

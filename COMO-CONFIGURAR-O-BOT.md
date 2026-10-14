@@ -111,7 +111,7 @@ Depois de um minuto, para ver se passou:
 & "C:\Program Files\GitHub CLI\gh.exe" run list --limit 5
 ```
 
-O painel fica em **https://jvhubert.github.io/painel-macro/** e dá para instalar no celular do mesmo jeito do Afinador (três pontinhos ⋮ → **Instalar app**).
+O painel fica em **https://jvhubert.github.io/panorama-financeiro/** e dá para instalar no celular do mesmo jeito do Afinador (três pontinhos ⋮ → **Instalar app**).
 
 ## Parte 7 — Conferir que está agendado
 

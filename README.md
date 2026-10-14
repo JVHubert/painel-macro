@@ -4,7 +4,7 @@ Selic, CDI, IPCA e dólar num painel que abre no celular, funciona offline e se 
 
 A ideia é acompanhar a economia sem ler relatório: cada número vem com uma linha dizendo o que ele significa para quem está começando a poupar, e um simulador mostra quanto o imposto e a inflação comem do rendimento.
 
-**Ver agora:** https://jvhubert.github.io/painel-macro/
+**Ver agora:** https://jvhubert.github.io/panorama-financeiro/
 
 Primeira vez configurando o Telegram? Siga o [COMO-CONFIGURAR-O-BOT.md](COMO-CONFIGURAR-O-BOT.md).
 
@@ -54,7 +54,7 @@ Conteúdo educativo. **Não é recomendação de investimento.**
 
 ## O painel no celular
 
-Abre em `https://jvhubert.github.io/painel-macro/` (ou `npm run serve` na sua máquina) e, depois da primeira visita, funciona offline. A ordem dos cartões é a que importa para quem poupa: **Juro real** primeiro, com a borda de destaque, porque é ele que diz quanto a renda fixa paga acima da inflação; depois Selic, CDI, IPCA e dólar. No topo, uma frase-resumo escrita por regras em `indicadores.js` — nada de IA. A fonte técnica (BACEN · SGS 432) fica no pé do cartão, em texto pequeno.
+Abre em `https://jvhubert.github.io/panorama-financeiro/` (ou `npm run serve` na sua máquina) e, depois da primeira visita, funciona offline. A ordem dos cartões é a que importa para quem poupa: **Juro real** primeiro, com a borda de destaque, porque é ele que diz quanto a renda fixa paga acima da inflação; depois Selic, CDI, IPCA e dólar. No topo, uma frase-resumo escrita por regras em `indicadores.js` — nada de IA. A fonte técnica (BACEN · SGS 432) fica no pé do cartão, em texto pequeno.
 
 No simulador, o campo **% do CDI** (padrão 100) mostra um CDB que paga mais ou menos que o CDI cheio, e a linha "Na poupança seria" compara com a poupança no mesmo prazo. A poupança entra como 0,5% ao mês enquanto a Selic está acima de 8,5% ao ano (abaixo disso, 70% da Selic) e **sem a TR** — a nota embaixo do resultado diz isso. Quando a pergunta da semana é de simulação, o próprio simulador avisa, lendo a `trilha.js`.
 
