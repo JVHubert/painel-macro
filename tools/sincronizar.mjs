@@ -12,7 +12,7 @@ function git(args) {
   return { ok: resultado.status === 0, saida: (resultado.stderr || resultado.stdout).trim() };
 }
 
-const REPO = 'https://github.com/JVHubert/painel-macro-dados.git';
+const REPO = 'https://github.com/JVHubert/panorama-financeiro-dados.git';
 const DESTINO = new URL('../.privado/', import.meta.url);
 
 // Só no PC: os dados vivem no clone `.privado/` e o git é nosso. Quando é o workflow que aponta a

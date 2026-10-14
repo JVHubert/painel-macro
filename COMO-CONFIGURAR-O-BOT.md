@@ -123,19 +123,20 @@ O painel fica em **https://jvhubert.github.io/panorama-financeiro/** e dá para 
 
 Os seus dados **nunca vão para o repositório público**. Eles ficam em dois lugares:
 
-1. **Na sua máquina** — `carteira.json`, `diario/decisoes.md` e `estudo/respostas.md`, que é onde
-   você edita (e onde as ferramentas leem por padrão).
-2. **Num repositório privado**, `https://github.com/JVHubert/painel-macro-dados` — a sua cópia de
-   segurança, e o que o relatório de domingo lê quando roda no GitHub. Ele já está criado, com os
-   três arquivos dentro. Só você tem acesso.
+1. **Na sua máquina** — dentro da pasta `.privado/` do projeto (o clone do repositório privado),
+   onde ficam `carteira.json`, `diario/decisoes.md` e `estudo/respostas.md`. É lá que você edita, e
+   os comandos enviam o que mudou sozinhos.
+2. **Num repositório privado**, `https://github.com/JVHubert/panorama-financeiro-dados` — a sua cópia
+   de segurança, e o que o relatório de domingo lê quando roda no GitHub. Ele já está criado, com os
+   arquivos dentro. Só você tem acesso.
 
 Para o GitHub conseguir ler esse repositório, falta **você** criar um token (eu não tenho como criar
 token na sua conta):
 
 1. Abra https://github.com/settings/personal-access-tokens/new (ou, no site: seu avatar → Settings →
    Developer settings → Personal access tokens → Fine-grained tokens → Generate new token).
-2. **Token name:** `painel-macro-dados`. **Expiration:** 1 ano.
-3. **Repository access:** marque *Only select repositories* e escolha **painel-macro-dados**.
+2. **Token name:** `panorama-financeiro-dados`. **Expiration:** 1 ano.
+3. **Repository access:** marque *Only select repositories* e escolha **panorama-financeiro-dados**.
 4. **Permissions → Repository permissions → Contents:** escolha **Read and write**.
 5. **Generate token** e copie o valor (começa com `github_pat_` e aparece uma única vez).
 6. Na pasta do projeto, rode o comando abaixo, cole o token quando ele pedir e aperte Enter (nada

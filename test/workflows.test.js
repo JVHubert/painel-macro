@@ -42,7 +42,8 @@ test('quem salva no repositório privado usa o mesmo grupo de espera, sem cancel
 
 test('o token dos dados privados não fica exposto aos scripts do npm ci', async () => {
   for (const { nome, texto } of await lerWorkflows()) {
-    const posicaoDoPrivado = texto.indexOf('repository: JVHubert/painel-macro-dados');
+    // Qualquer repo do dono: o nome do repositório de dados muda e o teste não pode virar letra morta.
+    const posicaoDoPrivado = texto.search(/repository:\s*JVHubert\/\S+/);
     const posicaoDoNpmCi = texto.indexOf('npm ci');
     if (posicaoDoPrivado === -1 || posicaoDoNpmCi === -1) continue;
 

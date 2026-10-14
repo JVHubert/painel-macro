@@ -39,7 +39,7 @@ jobs:
         continue-on-error: true
         uses: actions/checkout@v4
         with:
-          repository: JVHubert/painel-macro-dados
+          repository: JVHubert/panorama-financeiro-dados
           token: ${{ secrets.DADOS_TOKEN }}
           path: privado
 
