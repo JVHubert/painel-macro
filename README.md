@@ -279,12 +279,23 @@ e `reserva` baixam o que mudou antes de ler e enviam o que você anotou depois d
 
 ### Como a reserva é medida
 
-Nem todo lugar da reserva tem uma data de aporte: os cofrinhos recebem aporte toda semana. Para
-esses, o jeito é o **snapshot**: o `npm run reserva` anota o saldo de hoje de cada item em
-`reserva-historico.json` (privado) e a diferença entre o primeiro e o último snapshot mostra o que
-rendeu de verdade. Com o total investido informado no item (`investido`, no lugar de `rendimento`),
-o que entrou de aporte no período sai da conta. Quem tem um aporte só, com data (`dataAporte`), é
-medido pela data, como antes.
+Cada item da reserva tem três campos opcionais, e eles respondem a perguntas diferentes:
+
+| Campo | O que é | Quando usar |
+|---|---|---|
+| `dataAporte` | o dia em que você colocou o dinheiro | quando foi um aporte só (as caixinhas) |
+| `investido` | quanto você colocou, no total | junto com a data, no lugar do rendimento |
+| `rendimento` | quanto já rendeu, segundo o app | junto com a data, quando você sabe o número |
+| `taxaCDI` | a taxa que o produto **promete** (1,2 = 120% do CDI) | sempre que o produto promete um pedaço do CDI |
+
+A medição é outra coisa: o que o dinheiro **entregou**. Ela vem de duas fontes. Quem tem `dataAporte`
+é medido pela data e pelo total investido. Quem recebe aporte toda semana (os cofrinhos) não tem
+data: é medido por **snapshot** — o `npm run reserva` anota o saldo de hoje de cada item em
+`reserva-historico.json` (privado) e a diferença entre dois retratos mostra o que rendeu de verdade,
+descontando o que entrou de aporte no período quando o total investido é informado.
+
+O relatório mostra as duas colunas lado a lado (`Prometido` e `Entregou`) porque elas costumam
+divergir: taxa antiga, aporte novo no meio do período ou imposto já descontado no app.
 
 O que está no repositório público é código, indicadores públicos e o `carteira.example.json` sem
 número nenhum.

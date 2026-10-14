@@ -6,7 +6,7 @@
     "alvoMeses": 6,
     "detalhe": [
       { "nome": "Conta corrente", "saldo": 0 },
-      { "nome": "Caixinha X", "saldo": 0, "investido": 0, "dataAporte": "2025-01-01" },
+      { "nome": "Caixinha X", "saldo": 0, "investido": 0, "dataAporte": "2025-01-01", "taxaCDI": 1.2 },
       { "nome": "Cofrinho Y", "saldo": 0, "taxaCDI": 1.2 }
     ]
   },

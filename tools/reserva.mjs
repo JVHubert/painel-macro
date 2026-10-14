@@ -60,7 +60,7 @@ try {
 }
 const cdiNoPeriodo = cdiParaComparar({ serie, cdiAnual });
 
-const linhas = [['onde', 'saldo', 'desde', 'rendeu', 'ao ano', 'vs CDI']];
+const linhas = [['onde', 'saldo', 'desde', 'rendeu', 'prometido', 'entregou', 'ao ano']];
 const semMedicao = [];
 const primeiros = [];
 const curtos = [];
@@ -69,10 +69,11 @@ for (const item of itens) {
   const medido = medirItem(item, historico, { hoje: HOJE, cdiNoPeriodo });
   const lista = historico[item.nome] ?? [];
   if (item.taxaCDI && lista.length >= 2 && lista.at(-1).saldo === lista.at(-2).saldo) parados.push(item.nome);
+  const prometido = item.taxaCDI ? `${formatarPercentual(item.taxaCDI, 0)} do CDI` : '–';
   if (!medido) {
     if (lista.length < 2) primeiros.push(item.nome);
     else semMedicao.push(item.nome);
-    linhas.push([item.nome, formatarNumero(item.saldo, 2), '–', '–', '–', '–']);
+    linhas.push([item.nome, formatarNumero(item.saldo, 2), '–', '–', prometido, '–', '–']);
     continue;
   }
   if (!item.dataAporte && medido.dias < 7) curtos.push(item.nome);
@@ -81,13 +82,18 @@ for (const item of itens) {
     formatarNumero(item.saldo, 2),
     `${curto(medido.de)} (${medido.dias}d)`,
     formatarNumero(medido.rendimento, 2),
-    formatarPercentual(medido.taxaAnual),
+    prometido,
     formatarPercentual(medido.percentualDoCdi, 0),
+    formatarPercentual(medido.taxaAnual),
   ]);
 }
 
 console.log(`RESERVA — snapshot de ${formatarData(HOJE)}\n`);
-console.log(tabela(linhas, { colunas: ['esq', 'dir', 'esq', 'dir', 'dir', 'dir'] }));
+console.log(tabela(linhas, { colunas: ['esq', 'dir', 'esq', 'dir', 'dir', 'dir', 'dir'] }));
+console.log(
+  '\nprometido é a taxa que o banco anuncia; entregou é o que o saldo rendeu no período medido.\n' +
+    'diferença grande costuma ser taxa antiga, aporte novo no meio ou imposto já descontado no app.',
+);
 if (primeiros.length) {
   console.log(`\nprimeiro snapshot: ${primeiros.join(', ')} — a medição aparece quando houver o segundo.`);
 }

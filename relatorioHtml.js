@@ -10,6 +10,7 @@ import {
   linhasDaReserva,
   nivelDaReserva,
   notaDoExcedente,
+  notasDaReserva,
   numeroDaSemana,
   paraEstaSemana,
   rotuloDoMarco,
@@ -289,16 +290,17 @@ function reservaHtml(reserva, custoMensal) {
   if (linhas.length) {
     partes.push(
       tabelaHtml(
-        ['Onde', 'Saldo', 'Rende', 'vs CDI'],
+        ['Onde', 'Saldo', 'Prometido', 'Entregou', 'Ao ano'],
         linhas.map(
           (linha) =>
-            `<tr><td>${linha.onde}</td><td class="dir">${linha.saldo}</td><td class="dir">${linha.rende}</td>${tdNivel(
-              linha.vsCdi,
+            `<tr><td>${linha.onde}</td><td class="dir">${linha.saldo}</td><td class="dir">${linha.prometido}</td>${tdNivel(
+              linha.entregou,
               linha.nivel,
-            )}</tr>`,
+            )}<td class="dir">${linha.aoAno}</td></tr>`,
         ),
       ),
     );
+    for (const nota of notasDaReserva(linhas)) partes.push(`<p class="nota">${nota}</p>`);
   }
 
   return secao(tituloDaReserva({ reserva, custoMensal: custo }), partes.join(''));

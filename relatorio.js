@@ -408,7 +408,8 @@ export function paraEstaSemana(dados = {}) {  const itens = [];
     if (percentual === null || percentual === undefined) continue;
     const promessa = Number(item.taxaCDI) || null;
     if (percentual < 0.9 || (promessa !== null && percentual < promessa - 0.02)) {
-      itens.push(`${item.nome} rende ${formatarPercentual(percentual, 0)} do CDI.`);
+      const medido = `entregou ${formatarPercentual(percentual, 0)} do CDI`;
+      itens.push(promessa !== null ? `${item.nome} ${medido}, e não os ${formatarPercentual(promessa, 0)} prometidos.` : `${item.nome} ${medido}.`);
     }
   }
 
@@ -511,29 +512,54 @@ export function cartaoDoJogo(jogo) {
   return `${tituloDoJogo(jogo)}\n${linhas.join('\n')}`;
 }
 
-// A reserva numa tabela só: onde está, quanto tem, o que rende e quanto isso é do CDI.
+// A reserva numa tabela só: onde está, quanto tem, o que o produto promete e o que ele entregou.
+// Prometido (`taxaCDI`) e medido (`medido`) são coisas diferentes: um é a taxa que o banco anuncia,
+// o outro é o que o saldo mostrou no período. Antes os dois dividiam a mesma coluna e davam a
+// impressão de que o produto rendia menos do que promete.
 export function linhasDaReserva(reserva) {
-  const pendencias = new Set();
+  const detalhe = reserva?.detalhe ?? [];
+  // Quem tem o que mostrar (uma promessa ou uma medição) vem primeiro; a conta corrente, que não
+  // rende, fica no fim em vez de abrir a tabela com três traços.
+  const mostrar = (item) => Boolean(item.medido) || Boolean(item.taxaCDI);
+  const ordenados = [...detalhe.filter(mostrar), ...detalhe.filter((item) => !mostrar(item))];
+
   const linhas = [];
-  for (const item of reserva?.detalhe ?? []) {
+  for (const item of ordenados) {
     const medido = item.medido ?? null;
-    if (!medido && (item.taxaCDI || item.rendimento)) {
-      pendencias.add(`informe dataAporte e rendimento de ${item.nome} para eu medir`);
-    }
-    const percentual = medido?.percentualDoCdi;
+    const percentual = medido?.percentualDoCdi ?? null;
     linhas.push({
       onde: encurtar(item.nome, 20),
       saldo: formatarNumero(item.saldo, 2),
-      rende: medido
-        ? formatarPercentual(medido.taxaAnual)
-        : item.taxaCDI
-          ? `${formatarPercentual(item.taxaCDI, 0)} do CDI`
-          : '–',
-      vsCdi: percentual === null || percentual === undefined ? '–' : formatarPercentual(percentual, 0),
+      prometido: item.taxaCDI ? `${formatarPercentual(item.taxaCDI, 0)} do CDI` : '–',
+      // Sem taxa prometida, a coluna do medido mostra a taxa ao ano: é o que existe para comparar.
+      entregou:
+        percentual !== null
+          ? formatarPercentual(percentual, 0)
+          : medido
+            ? formatarPercentual(medido.taxaAnual)
+            : '–',
+      aoAno: medido ? formatarPercentual(medido.taxaAnual) : '–',
+      diasDeMedicao: medido?.dias ?? null,
+      medido: Boolean(medido),
       nivel: medido ? nivelDoCdi(percentual, item.taxaCDI) : null,
     });
   }
-  return { linhas, pendencias };
+  return { linhas, pendencias: new Set() };
+}
+
+// Explica a diferença entre a promessa e a medição, sem acusar ninguém. Só aparece quando há
+// alguma medição: sem ela, não existe comparação para explicar.
+export function notasDaReserva(linhas = []) {
+  const medidas = linhas.filter((linha) => linha.medido);
+  if (!medidas.length) return [];
+
+  const notas = [
+    'Prometido é o que o banco anuncia; medido é o que o saldo rendeu. Diferença grande costuma ser taxa antiga, aporte novo no meio ou imposto já descontado no app.',
+  ];
+  if (medidas.some((linha) => Number(linha.diasDeMedicao) < 7)) {
+    notas.push('Medição de menos de uma semana: o número oscila e firma com o tempo.');
+  }
+  return notas;
 }
 
 export function resumoReserva(reserva, { custoMensal, alvoMeses = reserva?.alvoMeses ?? 6 } = {}) {
@@ -569,17 +595,19 @@ export function resumoReserva(reserva, { custoMensal, alvoMeses = reserva?.alvoM
     blocos.push(
       tabela(
         [
-          ['Onde', 'Saldo', 'Rende', 'vs CDI'],
+          ['Onde', 'Saldo', 'Prometido', 'Entregou', 'Ao ano'],
           ...linhas.map((linha) => [
             linha.onde,
             linha.saldo,
-            linha.rende,
-            `${linha.vsCdi} ${linha.nivel?.emoji ?? ''}`.trim(),
+            linha.prometido,
+            `${linha.entregou} ${linha.nivel?.emoji ?? ''}`.trim(),
+            linha.aoAno,
           ]),
         ],
-        { colunas: ['esq', 'dir', 'dir', 'dir'] },
+        { colunas: ['esq', 'dir', 'dir', 'dir', 'dir'] },
       ),
     );
+    for (const nota of notasDaReserva(linhas)) blocos.push(nota);
   }
   return { texto: blocos.join('\n\n'), pendencias };
 }

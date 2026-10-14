@@ -11,6 +11,8 @@ import {
   montarRelatorio,
   nivelDaReserva,
   nivelDoCdi,
+  linhasDaReserva,
+  notasDaReserva,
   numeroDaSemana,
   paraEstaSemana,
   reaisCurto,
@@ -282,12 +284,47 @@ test('reserva detalhada separa medido de prometido', () => {
 
   assert.match(texto, /Saldo\s+R\$ 3\.100,00/);
   assert.match(texto, /Conta corrente\s+1\.000,00/);
-  assert.match(texto, /Caixinha X\s+1\.100,00\s+13,20%\s+112% 🟢/);
-  assert.match(texto, /Cofrinho W\s+200,00\s+10,20%\s+86% 🟡/);
-  assert.match(texto, /Cofrinho Y\s+500,00\s+7,30%\s+62% 🔴/);
-  assert.match(texto, /Cofrinho Z\s+300,00\s+120% do CDI\s+–/);
-  // Só quem tem taxa prometida e nenhuma data vira pendência.
-  assert.deepEqual([...pendencias], ['informe dataAporte e rendimento de Cofrinho Z para eu medir']);
+  assert.match(texto, /Caixinha X\s+1\.100,00\s+110% do CDI\s+112% 🟢\s+13,20%/);
+  assert.match(texto, /Cofrinho W\s+200,00\s+–\s+86% 🟡\s+10,20%/);
+  assert.match(texto, /Cofrinho Y\s+500,00\s+–\s+62% 🔴\s+7,30%/);
+  assert.match(texto, /Cofrinho Z\s+300,00\s+120% do CDI\s+–\s+–/);
+  // A promessa e a medição dividem colunas diferentes: é o que evita ler "rendeu menos do que prometeu".
+  assert.match(texto, /Prometido\s+Entregou\s+Ao ano/);
+  assert.match(texto, /Prometido é o que o banco anuncia; medido é o que o saldo rendeu/);
+  assert.ok(!texto.includes('menos de uma semana'), 'com 252 dias de medição, o aviso não aparece');
+  assert.equal(pendencias.size, 0, 'dado faltando na reserva não vira mais pendência do relatório');
+});
+
+test('a promessa e a medição da reserva dividem colunas diferentes', () => {
+  const linhas = [
+    { medido: true, diasDeMedicao: 252 },
+    { medido: true, diasDeMedicao: 3 },
+    { medido: false, diasDeMedicao: null },
+  ];
+
+  assert.deepEqual(notasDaReserva([]), [], 'sem nenhuma medição, não há o que explicar');
+
+  const comMedicao = notasDaReserva(linhas);
+  assert.match(comMedicao[0], /^Prometido é o que o banco anuncia; medido é o que o saldo rendeu\./);
+  assert.match(comMedicao[1], /menos de uma semana/, 'a medição curta avisa que o número oscila');
+
+  const todasLongas = notasDaReserva([{ medido: true, diasDeMedicao: 252 }]);
+  assert.equal(todasLongas.length, 1, 'medição longa não leva o aviso de oscilação');
+});
+
+test('quem não rende fica no fim da tabela da reserva', () => {
+  const { linhas } = linhasDaReserva({
+    detalhe: [
+      { nome: 'Conta corrente', saldo: 1000 },
+      { nome: 'Caixinha X', saldo: 2000, taxaCDI: 1.2 },
+      { nome: 'Sem promessa', saldo: 3000, medido: { dias: 200, total: 0.05, taxaAnual: 0.09, percentualDoCdi: 0.9 } },
+    ],
+  });
+
+  assert.deepEqual(
+    linhas.map((linha) => linha.onde),
+    ['Caixinha X', 'Sem promessa', 'Conta corrente'],
+  );
 });
 
 test('faixas de cor por resultado', () => {
@@ -398,9 +435,29 @@ test('paraEstaSemana prioriza o excedente, o produto ruim e a pergunta', () => {
   });
   assert.equal(itens.length, 3, 'no máximo 3 itens');
   assert.match(itens[0], /R\$ 4\.000,00 acima da meta de 6 meses — decida o destino e registre no diário\./);
-  assert.match(itens[1], /Caixinha X rende 80% do CDI\./);
+  assert.match(itens[1], /Caixinha X entregou 80% do CDI\./, 'sem promessa registrada, diz só o que mediu');
   assert.match(itens[2], /1 decisão do diário para revisar\./);
   assert.match(pergunta, /^R\$ 1\.000 a 1% ao mês por 12 meses viram quanto\?/);
+});
+
+test('a cobrança da reserva compara o medido com o prometido', () => {
+  const { itens } = paraEstaSemana({
+    data: '2026-10-11',
+    painel: PAINEL,
+    posicoes: [],
+    custoMensal: 1000,
+    reserva: {
+      alvoMeses: 6,
+      detalhe: [
+        // Rendeu 93% do CDI onde o banco promete 120%: a frase diz as duas coisas.
+        { nome: 'Férias', saldo: 1000, taxaCDI: 1.2, medido: { taxaAnual: 0.18, percentualDoCdi: 0.93 } },
+        // Prometeu 120% e entregou 122%: não vira item da semana.
+        { nome: 'Caixinha Turbo', saldo: 2000, taxaCDI: 1.2, medido: { taxaAnual: 0.17, percentualDoCdi: 1.22 } },
+      ],
+    },
+  });
+
+  assert.deepEqual(itens, ['Férias entregou 93% do CDI, e não os 120% prometidos.']);
 });
 
 test('relatório completo monta todos os blocos', () => {
