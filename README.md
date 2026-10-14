@@ -267,15 +267,24 @@ Nada pessoal seu vive no repositório público:
 | Na sua máquina (fora do git) | No GitHub |
 |---|---|
 | `.env.local` — token do bot | secret `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` |
-| `carteira.json`, `diario/decisoes.md`, `estudo/respostas.md`, `jogo/historico.json`, `jogo/mural.md` | repositório **privado** `JVHubert/painel-macro-dados` (lido com o token no secret `DADOS_TOKEN`) |
+| `carteira.json`, `diario/decisoes.md`, `estudo/respostas.md`, `jogo/historico.json`, `jogo/mural.md`, `reserva-historico.json` | repositório **privado** `JVHubert/painel-macro-dados` (lido com o token no secret `DADOS_TOKEN`) |
 | `carteira.json` (reserva) | secret `CARTEIRA_JSON` |
 | `relatorios/` — histórico do que chegou | — (o histórico de verdade é o próprio Telegram) |
 
 Os dados pessoais vivem no repositório privado, clonado em `.privado/` (fora do git). Os comandos
-leem e escrevem direto nessa pasta: `estudo`, `diario`, `relatorio`, `telegram`, `contexto` e
-`mural` baixam o que mudou antes de ler e enviam o que você anotou depois de escrever. O
+leem e escrevem direto nessa pasta: `estudo`, `diario`, `relatorio`, `telegram`, `contexto`, `mural`
+e `reserva` baixam o que mudou antes de ler e enviam o que você anotou depois de escrever. O
 `npm run sincronizar` faz esse vai e volta na hora que você quiser. No GitHub, o workflow aponta
 `DADOS_DIR` para a cópia que ele mesmo clona e salva no fim da rodada.
+
+### Como a reserva é medida
+
+Nem todo lugar da reserva tem uma data de aporte: os cofrinhos recebem aporte toda semana. Para
+esses, o jeito é o **snapshot**: o `npm run reserva` anota o saldo de hoje de cada item em
+`reserva-historico.json` (privado) e a diferença entre o primeiro e o último snapshot mostra o que
+rendeu de verdade. Com o total investido informado no item (`investido`, no lugar de `rendimento`),
+o que entrou de aporte no período sai da conta. Quem tem um aporte só, com data (`dataAporte`), é
+medido pela data, como antes.
 
 O que está no repositório público é código, indicadores públicos e o `carteira.example.json` sem
 número nenhum.
@@ -300,6 +309,7 @@ npm run coletar   # busca as APIs e regrava dados/indicadores.json
 npm run relatorio # monta o relatório, salva em relatorios/ e envia (imagem, senão texto)
 npm run relatorio -- --seco # igual, mas monta e salva sem enviar nada (para conferir)
 npm run diario    # diário de decisões: o que falta escrever e o que venceu
+npm run reserva   # anota o saldo de hoje da reserva e mede o que cada item rendeu (snapshots)
 npm run estudo    # pergunta da semana, respostas e aproveitamento
 npm run mural     # gera o mural de conquistas em 00 Outputs (arquivo local, nunca publicado)
 npm run telegram  # lê e responde o que chegou para o bot (/r, /d, /premio) e marca como lido

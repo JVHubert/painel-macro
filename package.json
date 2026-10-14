@@ -12,6 +12,7 @@
     "diario": "node tools/diario.mjs",
     "estudo": "node tools/estudo.mjs",
     "mural": "node tools/mural.mjs",
+    "reserva": "node tools/reserva.mjs",
     "telegram": "node tools/telegram.mjs",
     "sincronizar": "node tools/sincronizar.mjs",
     "contexto": "node tools/contexto.mjs",

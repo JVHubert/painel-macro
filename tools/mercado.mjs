@@ -12,7 +12,12 @@ export async function buscarJson(url, { tentativas = 3, espera = 5000 } = {}) {
     const resposta = await fetch(url, { headers: { accept: 'application/json' } });
     if (resposta.status === 404) return [];
     const tipo = resposta.headers.get('content-type') ?? '';
-    if (resposta.ok && tipo.includes('json')) return resposta.json();
+    if (resposta.ok && tipo.includes('json')) {
+      const corpo = await resposta.json();
+      // O SGS responde 200 com {"erro": ...} quando não há nenhum dado na janela pedida
+      // (acontece quando o CDI de ontem ainda não foi publicado). Isso é "vazio", não erro.
+      return corpo && !Array.isArray(corpo) && corpo.erro ? [] : corpo;
+    }
     if (tentativa < tentativas) {
       console.log(`BCB não devolveu JSON (tentativa ${tentativa}), esperando ${espera / 1000}s…`);
       await new Promise((seguir) => setTimeout(seguir, espera));

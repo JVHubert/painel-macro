@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   acumuladoDesde,
+  acumuladoEntre,
   acumular,
   anualizarDiaria,
   caminhoSparkline,
@@ -23,6 +24,7 @@ import {
   poupanca,
   resumoDoPainel,
   simulacao,
+  taxaEquivalente,
   urlSgs,
   valorAntes,
 } from '../indicadores.js';
@@ -340,4 +342,32 @@ test('o resumo do painel traduz o juro real e a Selic', () => {
   assert.match(caro, /A renda fixa não está batendo a inflação: o juro real está em -1,5%\./);
 
   assert.equal(resumoDoPainel({}), '');
+});
+
+test('acumuladoEntre conta só o CDI dentro da janela', () => {
+  const serie = [
+    { data: '2026-09-30', valor: 0.05 },
+    { data: '2026-10-01', valor: 0.05 },
+    { data: '2026-10-02', valor: 0.05 },
+    { data: '2026-10-05', valor: 0.05 },
+  ];
+  const dentro = acumuladoEntre(serie, '2026-10-01', '2026-10-02');
+  assert.ok(Math.abs(dentro - (1.0005 ** 2 - 1)) < 1e-12, 'as duas datas entram na conta');
+  assert.equal(acumuladoEntre(serie, '2026-10-03', '2026-10-04'), 0, 'sem ponto na janela, nada rendeu');
+  assert.ok(Math.abs(acumuladoDesde(serie, '2026-10-01') - (1.0005 ** 3 - 1)) < 1e-12);
+});
+
+test('taxaEquivalente aceita o total investido no lugar do rendimento', () => {
+  const aporte = { saldo: 2469.28, investido: 2000, dataAporte: '2025-06-29' };
+  const medido = taxaEquivalente(aporte, '2026-10-13');
+  assert.equal(medido.dias, 471);
+  assert.ok(Math.abs(medido.total - 0.234642) < 1e-4, 'o rendimento sai de saldo − investido');
+  assert.ok(Math.abs(medido.taxaAnual - 0.1775) < 1e-3);
+
+  const informado = taxaEquivalente({ saldo: 2121.28, rendimento: 298.98, dataAporte: '2025-06-29' }, '2026-10-13');
+  assert.ok(Math.abs(informado.total - 0.164067) < 1e-4, 'com rendimento informado, a conta é a de antes');
+  assert.ok(Math.abs(informado.taxaAnual - 0.12494) < 1e-3);
+
+  assert.equal(taxaEquivalente({ saldo: 100, investido: 100, dataAporte: '2026-10-13' }, '2026-10-13'), null);
+  assert.equal(taxaEquivalente({ saldo: 100, investido: 90 }, '2026-10-13'), null, 'sem data, sem taxa');
 });

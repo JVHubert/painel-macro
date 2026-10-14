@@ -4,6 +4,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { acumuladoDesde, compararComCdi, formatarData, hojeEmBrasilia, podeMostrarDetalhe, taxaEquivalente } from '../indicadores.js';
 import { alocacao, montarRelatorio, numeroDaSemana, resumoPosicao } from '../relatorio.js';
+import { cdiParaComparar, medirItem } from '../reserva.js';
 import { opcoesDaTrilha } from '../trilha.js';
 import { montarHtml } from '../relatorioHtml.js';
 import { acharBlocoDaSemana, lerEntradas, historicoDeEstudo, placar, situacao } from '../caderno.js';
@@ -18,7 +19,7 @@ import {
   regrasDoJogo,
   situacaoDoJogo,
 } from '../jogo.js';
-import { dadosUrl, lerJson, lerLista, lerTexto } from './arquivos.mjs';
+import { dadosUrl, lerJson, lerJsonOu, lerLista, lerTexto } from './arquivos.mjs';
 import { renderizar } from './imagem.mjs';
 import { cotacao, serieCdi } from './mercado.mjs';
 import { enviarFoto, enviarSemDerrubar } from './notificar.mjs';
@@ -29,6 +30,7 @@ const CARTEIRA = dadosUrl('carteira.json');
 const DIARIO = dadosUrl('diario/decisoes.md');
 const ESTUDO = dadosUrl('estudo/respostas.md');
 const HISTORICO = dadosUrl('jogo/historico.json');
+const RESERVA = dadosUrl('reserva-historico.json');
 const MURAL = dadosUrl('jogo/mural.md');
 const PASTA = new URL('../relatorios/', import.meta.url);
 const HOJE = hojeEmBrasilia();
@@ -105,21 +107,22 @@ for (const posicao of carteira.posicoes ?? []) {
   }
 }
 
-// Cada item da reserva ganha a taxa equivalente e a comparação com o CDI no período.
-function medirReserva(reserva) {
-  const detalhe = [];
-  for (const item of reserva?.detalhe ?? []) {
-    const medido = item.dataAporte ? taxaEquivalente(item, HOJE) : null;
-    const percentualDoCdi = medido ? compararComCdi(medido.total, cdiDesdeData(item.dataAporte)) : null;
+// Cada item da reserva ganha a taxa e a comparação com o CDI no período: pela data do aporte, quando
+// ela existe, e pelos snapshots de saldo quando não existe (os cofrinhos de aporte semanal).
+function medirReserva(reserva, historico = {}) {
+  const cdiAnual = (painel?.indicadores?.find((cartao) => cartao.id === 'cdi')?.valor ?? 0) / 100;
+  const cdiNoPeriodo = cdiParaComparar({ serie: serieDoCdi, cdiAnual });
+  const detalhe = (reserva?.detalhe ?? []).map((item) => {
+    const medido = medirItem(item, historico, { hoje: HOJE, cdiNoPeriodo });
     if (medido && MOSTRAR_DETALHE) {
       console.log(
         `${item.nome}: ${(medido.taxaAnual * 100).toFixed(2)}% a.a.${
-          percentualDoCdi ? ` (${(percentualDoCdi * 100).toFixed(0)}% do CDI)` : ''
+          medido.percentualDoCdi ? ` (${(medido.percentualDoCdi * 100).toFixed(0)}% do CDI)` : ''
         }`,
       );
     }
-    detalhe.push({ ...item, medido: medido ? { ...medido, percentualDoCdi } : null });
-  }
+    return { ...item, medido: medido ?? null };
+  });
   return detalhe.length ? { ...reserva, detalhe } : reserva;
 }
 
@@ -128,7 +131,7 @@ const dados = {
   data: HOJE,
   painel,
   posicoes,
-  reserva: medirReserva(carteira.reserva),
+  reserva: medirReserva(carteira.reserva, await lerJsonOu(RESERVA)),
   receitaMensal: carteira.receitaMensal,
   custoMensal: carteira.custoMensal,
   aporteMensal: carteira.aporteMensal,

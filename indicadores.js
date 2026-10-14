@@ -359,6 +359,11 @@ export function acumuladoDesde(serie, dataIso) {
   return acumular(filtrarDesde(serie, dataIso));
 }
 
+// Quanto o CDI rendeu entre duas datas, as duas incluídas (fração).
+export function acumuladoEntre(serie, deIso, ateIso) {
+  return acumular(serie.filter((ponto) => ponto.data >= deIso && ponto.data <= ateIso));
+}
+
 // Faixas de cor do painel e do relatório (formatação condicional).
 export const FAIXA_NEUTRA = 0.01;
 export const FAIXA_MUITO_BOM = 0.2;
@@ -394,9 +399,11 @@ export function legendaNiveis() {
   ].join(' · ');
 }
 
-// Quanto rendeu ao ano, a partir do saldo, do rendimento e da data do aporte.
-export function taxaEquivalente({ saldo, rendimento, dataAporte }, hoje) {
-  const principal = Number(saldo) - Number(rendimento);
+// Quanto rendeu ao ano, a partir do saldo e de quanto foi colocado (o rendimento sai da subtração),
+// e da data do aporte. Serve para quem tem um aporte só e sabe o total investido, não o rendimento.
+export function taxaEquivalente({ saldo, rendimento, investido, dataAporte }, hoje) {
+  const ganho = rendimento ?? (investido === undefined ? Number.NaN : Number(saldo) - Number(investido));
+  const principal = Number(saldo) - Number(ganho);
   if (!dataAporte || !Number.isFinite(principal) || principal <= 0) return null;
   const dias = (Date.parse(`${hoje}T00:00:00Z`) - Date.parse(`${dataAporte}T00:00:00Z`)) / 86400000;
   if (!Number.isFinite(dias) || dias <= 0) return null;
