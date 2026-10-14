@@ -1,24 +1,37 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dadosUrl, lerJson, lerLista, lerTexto } from '../tools/arquivos.mjs';
+import { dadosUrl, lerJson, lerLista, lerTexto, pastaDeDados } from '../tools/arquivos.mjs';
+
+// A raiz do projeto vem do próprio módulo: assim o teste vale com qualquer nome de pasta (no CI
+// ela é o nome do repositório, que muda).
+const RAIZ = pastaDeDados({ ddir: '', temClone: false });
 
 test('sem DADOS_DIR os dados saem da raiz do projeto, ou do clone quando ele existe', () => {
-  assert.match(dadosUrl('carteira.json', { ddir: '', temClone: false }).pathname, /painel-macro\/carteira\.json$/);
-  assert.match(
-    dadosUrl('carteira.json', { ddir: '', temClone: true }).pathname,
-    /painel-macro\/\.privado\/carteira\.json$/,
+  assert.equal(
+    dadosUrl('carteira.json', { ddir: '', temClone: false }).href,
+    new URL('carteira.json', RAIZ).href,
+  );
+  assert.equal(
+    dadosUrl('carteira.json', { ddir: '', temClone: true }).href,
+    new URL('.privado/carteira.json', RAIZ).href,
   );
 });
 
 test('com DADOS_DIR os dados saem da pasta apontada (relativa ou absoluta)', () => {
-  assert.match(dadosUrl('carteira.json', { ddir: 'privado/' }).pathname, /painel-macro\/privado\/carteira\.json$/);
-  assert.match(dadosUrl('diario/decisoes.md', { ddir: 'privado/' }).pathname, /privado\/diario\/decisoes\.md$/);
-  assert.match(dadosUrl('estudo/respostas.md', { ddir: 'privado/' }).pathname, /privado\/estudo\/respostas\.md$/);
+  assert.equal(dadosUrl('carteira.json', { ddir: 'privado/' }).href, new URL('privado/carteira.json', RAIZ).href);
+  assert.equal(
+    dadosUrl('diario/decisoes.md', { ddir: 'privado/' }).href,
+    new URL('privado/diario/decisoes.md', RAIZ).href,
+  );
+  assert.equal(
+    dadosUrl('estudo/respostas.md', { ddir: 'privado/' }).href,
+    new URL('privado/estudo/respostas.md', RAIZ).href,
+  );
 
   // Caminho absoluto: não pode ser resolvido contra a raiz do projeto (vale em qualquer plataforma).
   const absoluto = dadosUrl('carteira.json', { ddir: '/dados/x' }).pathname;
   assert.ok(absoluto.endsWith('/dados/x/carteira.json'), absoluto);
-  assert.ok(!absoluto.includes('painel-macro'), absoluto);
+  assert.ok(!absoluto.includes(RAIZ.pathname), absoluto);
 
   // No Windows, o caminho com letra de unidade também é absoluto (é o que o DADOS_DIR dos testes usa).
   if (process.platform === 'win32') {
